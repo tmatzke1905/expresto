@@ -1,0 +1,92 @@
+import express from 'express';
+import { loadConfig } from './lib/config';
+import { setupLogger, AppLogger } from './lib/logger';
+import { HookManager, LifecycleHook, HookContext } from './lib/hooks';
+import { EventBus } from './lib/events';
+import { SecurityProvider } from './lib/security';
+import { ControllerLoader } from './lib/controller-loader';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import log4js from 'log4js';
+
+/**
+ * Creates and configures the expRESTo server asynchronously.
+ * @param configPath Path to the middleware config JSON file.
+ */
+export async function createServer(configPath: string) {
+  // Load configuration
+  const config = await loadConfig(configPath);
+
+  // Initialize logger, hooks, events
+  const logger = setupLogger(config);
+  const hookManager = new HookManager();
+  const eventBus = new EventBus();
+
+  // Create express app
+  const app = express();
+
+  const ctx: HookContext = { config, logger, app, eventBus };
+
+  // Startup lifecycle hook
+  await hookManager.emit(LifecycleHook.STARTUP, ctx);
+
+  // Register built-in middleware
+  app.use(express.json());
+  app.use(cors(config.cors?.options || {}));
+  app.use(helmet(config.helmet?.options || {}));
+
+  if (config.rateLimit?.enabled) {
+    app.use(rateLimit(config.rateLimit.options));
+  }
+
+  // Pre-initialization hook
+  await hookManager.emit(LifecycleHook.PRE_INIT, ctx);
+
+  // Initialize security provider (e.g. JWT, Basic Auth)
+  const security = new SecurityProvider(config.auth, logger);
+
+  // Custom middleware hook
+  await hookManager.emit(LifecycleHook.CUSTOM_MIDDLEWARE, ctx, false);
+
+  // Post-initialization hook
+  await hookManager.emit(LifecycleHook.POST_INIT, ctx);
+
+  // Access log middleware
+  app.use(log4js.connectLogger(logger.access, { level: 'auto' }));
+
+  // Load and register controllers
+  const loader = new ControllerLoader(config.controllersPath, logger, security);
+  await loader.load(app, config.contextRoot);
+
+  // Global error handler
+  app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    logger.app.error('Unhandled error:', err);
+    eventBus.emit('error', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
+
+  // Handle graceful shutdown
+  const shutdown = async () => {
+    await hookManager.emit(LifecycleHook.SHUTDOWN, { config, logger });
+    logger.app.info('expRESTo shutdown complete.');
+    process.exit(0);
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  return { app, config, logger, hookManager, eventBus };
+}
+
+// Allow direct execution as CLI
+// This check ensures the server only starts automatically
+// when this file is executed directly via `node`, and not when imported as a module.
+if (require.main === module) {
+  (async () => {
+    const { app, config, logger } = await createServer('./middleware.config.json');
+    app.listen(config.port, config.host || '0.0.0.0', () => {
+      logger.app.info(`expRESTo listening at http://${config.host || '0.0.0.0'}:${config.port}`);
+    });
+  })();
+}
