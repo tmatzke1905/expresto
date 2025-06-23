@@ -2,6 +2,7 @@ import type { AppConfig } from './config';
 import type { AppLogger } from './logger';
 import type express from 'express';
 import type { EventBus } from './events';
+import type { ServiceRegistry } from './services/service-registry';
 
 /**
  * Enum of supported lifecycle hook types.
@@ -22,6 +23,7 @@ export interface HookContext {
   logger: AppLogger;
   app?: express.Application;
   eventBus?: EventBus;
+  services?: ServiceRegistry;
 }
 
 type HookCallback = (ctx: HookContext) => void | Promise<void>;
@@ -44,14 +46,14 @@ export class HookManager {
   /**
    * Emit a hook with consistent arguments and await all handlers.
    */
-  async emit(hook: LifecycleHook, context: HookContext, failFast = true): Promise<void> {
+  async emit(hook: LifecycleHook, context: HookContext): Promise<void> {
     const listeners = this.listeners.get(hook) || [];
     for (const fn of listeners) {
       try {
         await fn(context);
       } catch (err) {
         context.logger.app.error(`Error in hook [${hook}]:`, err);
-        if (failFast) throw err;
+        if (hook !== LifecycleHook.CUSTOM_MIDDLEWARE) throw err;
       }
     }
   }

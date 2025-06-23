@@ -21,20 +21,28 @@ export function setupLogger(config: AppConfig): AppLogger {
       application: {
         type: 'file',
         filename: config.log.application,
+        layout: { type: 'json' },
+      },
+      console: {
+        type: 'console',
         layout: { type: 'pattern', pattern: '%d{ISO8601} [%p] [%c] %m' },
       },
-      console: { type: 'console' },
     },
     categories: {
-      default: { appenders: ['application', 'console'], level: config.log.level || 'INFO' },
-      access: { appenders: ['access'], level: 'INFO' },
+      default: {
+        appenders: ['application', 'console'],
+        level: config.log.level || 'INFO',
+      },
+      access: {
+        appenders: ['access'],
+        level: 'INFO',
+      },
     },
   });
 
   const app = log4js.getLogger();
   const access = log4js.getLogger('access');
 
-  // Optional trace-level request logging
   if (config.log.traceRequests && config.log.level === 'TRACE') {
     app.trace('TRACE-level request logging enabled.');
   }

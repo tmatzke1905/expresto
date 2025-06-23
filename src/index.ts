@@ -5,6 +5,7 @@ import { HookManager, LifecycleHook, HookContext } from './lib/hooks';
 import { EventBus } from './lib/events';
 import { SecurityProvider } from './lib/security';
 import { ControllerLoader } from './lib/controller-loader';
+import { ServiceRegistry } from './lib/services/service-registry';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -18,15 +19,16 @@ export async function createServer(configPath: string) {
   // Load configuration
   const config = await loadConfig(configPath);
 
-  // Initialize logger, hooks, events
+  // Initialize logger, hooks, events, services
   const logger = setupLogger(config);
   const hookManager = new HookManager();
   const eventBus = new EventBus();
+  const services = new ServiceRegistry();
 
   // Create express app
   const app = express();
 
-  const ctx: HookContext = { config, logger, app, eventBus };
+  const ctx: HookContext = { config, logger, app, eventBus, services };
 
   // Startup lifecycle hook
   await hookManager.emit(LifecycleHook.STARTUP, ctx);
@@ -47,7 +49,7 @@ export async function createServer(configPath: string) {
   const security = new SecurityProvider(config.auth, logger);
 
   // Custom middleware hook
-  await hookManager.emit(LifecycleHook.CUSTOM_MIDDLEWARE, ctx, false);
+  await hookManager.emit(LifecycleHook.CUSTOM_MIDDLEWARE, ctx);
 
   // Post-initialization hook
   await hookManager.emit(LifecycleHook.POST_INIT, ctx);
@@ -68,7 +70,7 @@ export async function createServer(configPath: string) {
 
   // Handle graceful shutdown
   const shutdown = async () => {
-    await hookManager.emit(LifecycleHook.SHUTDOWN, { config, logger });
+    await hookManager.emit(LifecycleHook.SHUTDOWN, ctx);
     logger.app.info('expRESTo shutdown complete.');
     process.exit(0);
   };
@@ -76,7 +78,7 @@ export async function createServer(configPath: string) {
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
-  return { app, config, logger, hookManager, eventBus };
+  return { app, config, logger, hookManager, eventBus, services };
 }
 
 // Allow direct execution as CLI

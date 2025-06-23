@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "expRESTo Configuration Schema",
+  "type": "object",
+  "required": ["port", "contextRoot", "controllersPath", "log"],
+  "properties": {
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "host": {
+      "type": "string"
+    },
+    "contextRoot": {
+      "type": "string",
+      "pattern": "^/.*"
+    },
+    "controllersPath": {
+      "type": "string"
+    },
+    "log": {
+      "type": "object",
+      "required": ["access", "application"],
+      "properties": {
+        "access": { "type": "string" },
+        "application": { "type": "string" },
+        "level": {
+          "type": "string",
+          "enum": ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
+        },
+        "traceRequests": { "type": "boolean" }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "basic": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "users": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        },
+        "jwt": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "secret": { "type": "string" },
+            "algorithm": {
+              "type": "string",
+              "enum": ["HS256", "HS384", "HS512", "RS256", "ES256"]
+            },
+            "expiresIn": { "type": "string" }
+          }
+        }
+      }
+    },
+    "cors": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "options": { "type": "object" }
+      }
+    },
+    "helmet": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "options": { "type": "object" }
+      }
+    },
+    "rateLimit": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "options": { "type": "object" }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "endpoint": { "type": "string" }
+      }
+    }
+  },
+  "additionalProperties": false
+}

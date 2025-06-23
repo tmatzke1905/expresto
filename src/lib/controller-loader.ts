@@ -3,6 +3,7 @@ import path from 'path';
 import express from 'express';
 import type { AppLogger } from './logger';
 import type { SecurityProvider } from './security';
+import { RouteRegistry } from './routing/route-registry';
 
 type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
 
@@ -34,6 +35,8 @@ type ControllerModule = SimpleController | AdvancedController;
  * Loads and registers all controller modules in the configured directory.
  */
 export class ControllerLoader {
+  private readonly routeRegistry = new RouteRegistry();
+
   constructor(
     private controllerPath: string,
     private logger: AppLogger,
@@ -74,6 +77,14 @@ export class ControllerLoader {
 
               args.push(h.handler);
               router[method](h.path, ...args);
+
+              // Register route for analysis
+              this.routeRegistry.register({
+                method,
+                path: path.posix.join(contextRoot, mod.route, h.path),
+                secure: h.secure !== false,
+                source: file,
+              });
             }
           } else {
             throw new Error('Controller must export either "init()" or "handlers[]".');
@@ -83,6 +94,23 @@ export class ControllerLoader {
           this.logger.app.info(`Controller mounted at ${contextRoot}${mod.route}`);
         } catch (err) {
           this.logger.app.error(`Failed to load controller ${file}:`, err);
+        }
+      }
+
+      // Detect and log route conflicts after all are registered
+      const conflicts = this.routeRegistry.detectConflicts();
+      for (const msg of conflicts) {
+        this.logger.app.warn(`[RouteRegistry] ${msg}`);
+      }
+
+      // Optional: log sorted route list (DEBUG or TRACE only)
+      if (this.logger.app.isDebugEnabled()) {
+        const sorted = this.routeRegistry.getSorted();
+        this.logger.app.debug('[RouteRegistry] Registered Routes:');
+        for (const r of sorted) {
+          this.logger.app.debug(
+            `  [${r.method.toUpperCase()}] ${r.path} (${r.secure ? 'secure' : 'public'})`
+          );
         }
       }
     } catch (err) {

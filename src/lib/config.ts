@@ -1,7 +1,30 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
+import { pathToFileURL } from 'url';
+import { createRequire } from 'module';
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 
-// Define the base structure of the configuration file
+const require = createRequire(import.meta.url);
+const schema = require('../../middleware.config.schema.json');
+
+const ajv = new Ajv({ allErrors: true });
+addFormats(ajv);
+const validate = ajv.compile(schema);
+
+export interface AuthConfig {
+  jwt?: {
+    enabled?: boolean;
+    secret: string;
+    algorithm?: string;
+    expiresIn?: string;
+  };
+  basic?: {
+    enabled?: boolean;
+    users?: Record<string, string>;
+  };
+}
+
 export interface AppConfig {
   port: number;
   host?: string;
@@ -10,75 +33,32 @@ export interface AppConfig {
   log: {
     access: string;
     application: string;
-    level?: 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
+    level: string;
     traceRequests?: boolean;
   };
-  auth?: {
-    basic?: {
-      enabled: boolean;
-      users: Record<string, string>; // username → password
-    };
-    jwt?: {
-      enabled: boolean;
-      secret: string;
-      algorithm?: string;
-      expiresIn?: string;
-    };
-  };
-  cors?: {
-    enabled?: boolean;
-    options?: Record<string, any>;
-  };
-  helmet?: {
-    enabled?: boolean;
-    options?: Record<string, any>;
-  };
+  cors?: { options?: Record<string, any> };
+  helmet?: { options?: Record<string, any> };
   rateLimit?: {
-    enabled: boolean;
+    enabled?: boolean;
     options: Record<string, any>;
   };
-  cluster?: {
-    enabled: boolean;
-  };
-  metrics?: {
-    endpoint?: string;
-  };
+  auth?: AuthConfig;
+  cluster?: { enabled?: boolean };
+  metrics?: { endpoint?: string };
 }
 
 /**
- * Loads the application config JSON asynchronously and merges it with defaults.
- * @param configPath Path to the configuration JSON file.
+ * Loads and validates middleware configuration from JSON file.
  */
 export async function loadConfig(configPath: string): Promise<AppConfig> {
-  const resolvedPath = path.resolve(configPath);
+  const file = await fs.readFile(path.resolve(configPath), 'utf-8');
+  const config = JSON.parse(file);
 
-  try {
-    await fs.promises.access(resolvedPath, fs.constants.F_OK);
-  } catch {
-    throw new Error(`Config file not found: ${resolvedPath}`);
+  if (!validate(config)) {
+    const errors = validate.errors?.map(err => `${err.instancePath} ${err.message}`).join('; ');
+    throw new Error(`Configuration validation failed: ${errors}`);
   }
 
-  const raw = await fs.promises.readFile(resolvedPath, 'utf-8');
-  const parsed = JSON.parse(raw);
-
-  // Apply minimal default values
-  return {
-    host: '0.0.0.0',
-    log: {
-      level: 'INFO',
-      traceRequests: false,
-      ...parsed.log,
-    },
-    cors: {
-      enabled: true,
-      options: { origin: '*', credentials: true },
-      ...parsed.cors,
-    },
-    helmet: {
-      enabled: true,
-      options: {},
-      ...parsed.helmet,
-    },
-    ...parsed,
-  } satisfies AppConfig;
+  // ✅ safe cast after schema validation
+  return config as AppConfig;
 }
