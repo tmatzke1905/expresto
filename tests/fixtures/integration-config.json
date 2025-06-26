@@ -1,13 +1,13 @@
 {
-  "port": 3000,
+  "port": 3001,
   "host": "127.0.0.1",
   "contextRoot": "/api",
-  "controllersPath": "../controllers",
+  "controllersPath": "./tests/controllers",
   "log": {
     "access": "./logs/access.log",
     "application": "./logs/application.log",
     "level": "DEBUG",
-    "traceRequests": true
+    "traceRequests": false
   },
   "auth": {
     "jwt": {

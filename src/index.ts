@@ -1,7 +1,7 @@
 import { updateServiceMetrics } from './lib/monitoring';
 import express from 'express';
 import { createPrometheusRouter, prometheusMiddleware } from './lib/monitoring';
-import { loadConfig } from './lib/config';
+import { loadConfig, AppConfig } from './lib/config';
 import { setupLogger, AppLogger } from './lib/logger';
 import { HookManager, LifecycleHook, HookContext } from './lib/hooks';
 import { EventBus } from './lib/events';
@@ -13,13 +13,20 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import log4js from 'log4js';
 
+let server: import('http').Server | undefined;
+
 /**
  * Creates and configures the expRESTo server asynchronously.
- * @param configPath Path to the middleware config JSON file.
+ * @param configInput Path to the middleware config JSON file or an AppConfig object.
  */
-export async function createServer(configPath: string) {
+export async function createServer(configInput: string | AppConfig) {
   // Load configuration
-  const config = await loadConfig(configPath);
+  let config: AppConfig;
+  if (typeof configInput === 'string') {
+    config = await loadConfig(configInput);
+  } else {
+    config = configInput;
+  }
 
   // Initialize logger, hooks, events, services
   const logger = setupLogger(config);
@@ -36,7 +43,7 @@ export async function createServer(configPath: string) {
   // Mount Prometheus metrics endpoint (before contextRoot!)
   app.use(createPrometheusRouter(config, logger));
 
-  const ctx: HookContext = { config, logger, app, eventBus, services };
+  const ctx: HookContext = { config, logger, eventBus, services };
 
   // Startup lifecycle hook
   await hookManager.emit(LifecycleHook.STARTUP, ctx);
@@ -80,14 +87,13 @@ export async function createServer(configPath: string) {
   });
 
   // Handle graceful shutdown
-  let server: import('http').Server | undefined;
   const shutdown = async () => {
     await hookManager.emit(LifecycleHook.SHUTDOWN, ctx);
     if (server) {
       logger.app.info('Shutting down HTTP server...');
       try {
         await new Promise<void>((resolve, reject) => {
-          server!.close((err) => (err ? reject(err) : resolve()));
+          server!.close(err => (err ? reject(err) : resolve()));
         });
       } catch (err) {
         logger.app.error('Error during HTTP server shutdown:', err);
@@ -110,20 +116,8 @@ if (require.main === module) {
   (async () => {
     const { app, config, logger } = await createServer('./middleware.config.json');
     // Start server and capture instance for shutdown
-    const s = app.listen(config.port, config.host || '0.0.0.0', () => {
+    server = app.listen(config.port, config.host || '0.0.0.0', () => {
       logger.app.info(`expRESTo listening at http://${config.host || '0.0.0.0'}:${config.port}`);
     });
-    // Expose server instance to shutdown handler
-    // @ts-ignore
-    (app as any)._server = s;
-    // Find shutdown handler and assign server
-    // @ts-ignore
-    if (typeof shutdown === 'function') {
-      // @ts-ignore
-      shutdown.server = s;
-    }
-    // Assign to the closure variable for shutdown in createServer
-    // @ts-ignore
-    server = s;
   })();
 }

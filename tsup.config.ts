@@ -11,4 +11,5 @@ export default defineConfig({
   sourcemap: true,
   target: 'node18',
   minify: process.env.NODE_ENV === 'production',
+  external: ['middleware.config.json'], // Exclude from bundling
 });

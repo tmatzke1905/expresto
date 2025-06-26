@@ -21,7 +21,7 @@ export function setupLogger(config: AppConfig): AppLogger {
       application: {
         type: 'file',
         filename: config.log.application,
-        layout: { type: 'json' },
+        layout: { type: 'pattern', pattern: '%d{ISO8601} [%p] [%c] %m' },
       },
       console: {
         type: 'console',

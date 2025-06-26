@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { loadConfig } from '../src/lib/config';
 import path from 'path';
+import { loadConfig } from '../src/lib/config';
 
 const validConfigPath = path.resolve(__dirname, './fixtures/valid-config.json');
 const invalidConfigPath = path.resolve(__dirname, './fixtures/invalid-config.json');
