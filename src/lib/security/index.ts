@@ -1,4 +1,4 @@
-import type { RequestHandler } from 'express';
+import type { ExtHandler } from '../types';
 import type { AppLogger } from '../logger';
 import type { AuthConfig } from '../config';
 import { verifyToken } from './jwt';
@@ -22,25 +22,28 @@ export class SecurityProvider {
   /**
    * Express middleware for guarding routes using JWT
    */
-  guard(): RequestHandler {
-    return async (req, res, next) => {
+  guard(): ExtHandler {
+    return (req, res, next) => {
       if (!this.jwtEnabled) return next();
 
       const authHeader = req.headers['authorization'];
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         this.logger.app.warn('Missing or invalid Authorization header');
-        return res.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
       }
 
       const token = authHeader.substring(7);
-      try {
-        const payload = await verifyToken(token, this.secret, this.algorithm);
-        (req as any).user = payload; // optionally attach to request
-        next();
-      } catch (err) {
-        this.logger.app.warn('Invalid token:', err);
-        return res.status(403).json({ error: 'Forbidden' });
-      }
+      verifyToken(token, this.secret, this.algorithm)
+        .then(payload => {
+          (req as any).user = payload;
+          next();
+        })
+        .catch(err => {
+          this.logger.app.warn('Invalid token:', err);
+          res.status(403).json({ error: 'Forbidden' });
+          return;
+        });
     };
   }
 }

@@ -25,7 +25,7 @@
     }
   },
   "scripts": {
-    "dev": "tsup --watch",
+    "dev": "nodemon",
     "build": "NODE_ENV=production tsup",
     "build:dev": "NODE_ENV=development tsup",
     "start": "node ./dist/index.cjs",
@@ -63,10 +63,12 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.0",
+    "nodemon": "^3.1.10",
     "prettier": "^3.6.0",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "ts-node": "^10.9.2"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,6 +1,8 @@
+import { updateRouteMetrics, updateServiceMetrics } from './monitoring';
 import fs from 'fs/promises';
 import path from 'path';
 import express from 'express';
+import type { ExtHandler } from './types';
 import type { AppLogger } from './logger';
 import type { SecurityProvider } from './security';
 import { RouteRegistry } from './routing/route-registry';
@@ -10,9 +12,9 @@ type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
 interface RouteHandler {
   method: HttpMethod;
   path: string;
-  handler: (req: express.Request, res: express.Response) => void | Promise<void>;
+  handler: ExtHandler;
   secure?: boolean;
-  middlewares?: express.RequestHandler[];
+  middlewares?: ExtHandler[];
 }
 
 interface SimpleController {
@@ -65,7 +67,7 @@ export class ControllerLoader {
           } else if ('handlers' in mod) {
             for (const h of mod.handlers) {
               const method = h.method.toLowerCase() as HttpMethod;
-              const args: express.RequestHandler[] = [];
+              const args: ExtHandler[] = [];
 
               if (h.middlewares) {
                 args.push(...h.middlewares);
@@ -103,6 +105,13 @@ export class ControllerLoader {
         this.logger.app.warn(`[RouteRegistry] ${msg}`);
       }
 
+      const allRoutes = this.routeRegistry.getRoutes();
+      const routeInfos = allRoutes.map(r => ({
+        method: r.method,
+        secure: r.secure ?? true,
+      }));
+      updateRouteMetrics(routeInfos, conflicts.length);
+
       // Optional: log sorted route list (DEBUG or TRACE only)
       if (this.logger.app.isDebugEnabled()) {
         const sorted = this.routeRegistry.getSorted();
@@ -113,6 +122,7 @@ export class ControllerLoader {
           );
         }
       }
+
     } catch (err) {
       this.logger.app.error('Failed to read controller directory:', err);
       throw err;

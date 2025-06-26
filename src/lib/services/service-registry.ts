@@ -46,4 +46,11 @@ export class ServiceRegistry {
   list(): string[] {
     return Array.from(this.services.keys());
   }
+
+  /**
+   * Returns all registered services as a key-value object.
+   */
+  getAll(): Record<string, unknown> {
+    return Object.fromEntries(this.services.entries());
+  }
 }

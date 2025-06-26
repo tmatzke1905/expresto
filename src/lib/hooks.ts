@@ -1,6 +1,5 @@
 import type { AppConfig } from './config';
 import type { AppLogger } from './logger';
-import type express from 'express';
 import type { EventBus } from './events';
 import type { ServiceRegistry } from './services/service-registry';
 
@@ -21,7 +20,6 @@ export enum LifecycleHook {
 export interface HookContext {
   config: AppConfig;
   logger: AppLogger;
-  app?: express.Application;
   eventBus?: EventBus;
   services?: ServiceRegistry;
 }

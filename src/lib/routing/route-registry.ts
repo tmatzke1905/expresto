@@ -51,6 +51,10 @@ export class RouteRegistry {
     return conflicts;
   }
 
+  public getRoutes(): RegisteredRoute[] {
+    return [...this.routes];
+  }
+
   /**
    * Scores a path by static segments.
    */

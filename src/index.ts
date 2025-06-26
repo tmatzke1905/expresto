@@ -1,3 +1,4 @@
+import { updateServiceMetrics } from './lib/monitoring';
 import express from 'express';
 import { createPrometheusRouter, prometheusMiddleware } from './lib/monitoring';
 import { loadConfig } from './lib/config';
@@ -39,6 +40,9 @@ export async function createServer(configPath: string) {
 
   // Startup lifecycle hook
   await hookManager.emit(LifecycleHook.STARTUP, ctx);
+
+  // Update Prometheus metrics after service registration
+  updateServiceMetrics(Object.keys(services.getAll()));
 
   // Register built-in middleware
   app.use(express.json());

@@ -17,11 +17,31 @@ const httpRequestDuration = new client.Histogram({
   name: 'expresto_http_request_duration_seconds',
   help: 'Duration of HTTP requests in seconds',
   labelNames: ['method', 'route', 'status'],
-  buckets: [0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5]
+  buckets: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+});
+
+const routeGauge = new client.Gauge({
+  name: 'expresto_routes_total',
+  help: 'Number of registered routes',
+  labelNames: ['method', 'secure']
+});
+
+const conflictGauge = new client.Gauge({
+  name: 'expresto_route_conflicts_total',
+  help: 'Number of conflicting route registrations'
+});
+
+const serviceGauge = new client.Gauge({
+  name: 'expresto_services_total',
+  help: 'Number of registered services',
+  labelNames: ['type']
 });
 
 registry.registerMetric(httpRequestCounter);
 registry.registerMetric(httpRequestDuration);
+registry.registerMetric(routeGauge);
+registry.registerMetric(conflictGauge);
+registry.registerMetric(serviceGauge);
 
 export function createPrometheusRouter(config: AppConfig, logger: AppLogger): express.Router {
   const router = express.Router();
@@ -67,4 +87,34 @@ export function prometheusMiddleware(): express.RequestHandler {
 
     next();
   };
+}
+
+export function updateRouteMetrics(routes: { method: string; secure: boolean }[], conflicts: number) {
+  routeGauge.reset();
+  const counter = new Map<string, number>();
+
+  for (const route of routes) {
+    const key = `${route.method}|${route.secure}`;
+    counter.set(key, (counter.get(key) || 0) + 1);
+  }
+
+  for (const [key, value] of counter.entries()) {
+    const [method, secure] = key.split('|');
+    routeGauge.set({ method, secure }, value);
+  }
+
+  conflictGauge.set(conflicts);
+}
+
+export function updateServiceMetrics(serviceTypes: string[]) {
+  serviceGauge.reset();
+  const counter = new Map<string, number>();
+
+  for (const type of serviceTypes) {
+    counter.set(type, (counter.get(type) || 0) + 1);
+  }
+
+  for (const [type, count] of counter.entries()) {
+    serviceGauge.set({ type }, count);
+  }
 }
