@@ -1,16 +1,26 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { pathToFileURL } from 'url';
-import { createRequire } from 'module';
+import type { ValidateFunction } from 'ajv';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
-const require = createRequire(import.meta.url);
-const schema = require('../../middleware.config.schema.json');
+let validate: ValidateFunction | null = null;
 
-const ajv = new Ajv({ allErrors: true });
-addFormats(ajv);
-const validate = ajv.compile(schema);
+async function getValidator(): Promise<ValidateFunction> {
+  if (validate) return validate;
+
+  const file = await fs.readFile(
+    path.resolve(__dirname, '../../middleware.config.schema.json'),
+    'utf-8'
+  );
+  const schema = JSON.parse(file);
+
+  const ajv = new Ajv({ allErrors: true });
+  addFormats(ajv);
+
+  validate = ajv.compile(schema);
+  return validate;
+}
 
 export interface AuthConfig {
   jwt?: {
@@ -54,6 +64,7 @@ export async function loadConfig(configPath: string): Promise<AppConfig> {
   const file = await fs.readFile(path.resolve(configPath), 'utf-8');
   const config = JSON.parse(file);
 
+  const validate = await getValidator();
   if (!validate(config)) {
     const errors = validate.errors?.map(err => `${err.instancePath} ${err.message}`).join('; ');
     throw new Error(`Configuration validation failed: ${errors}`);

@@ -1,3 +1,4 @@
+// Uses NODE_ENV=production to enable minification
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
@@ -9,4 +10,5 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   target: 'node18',
+  minify: process.env.NODE_ENV === 'production',
 });

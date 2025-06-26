@@ -1,0 +1,15 @@
+{
+  "contextRoot": "/api",
+  "controllersPath": "./src/controllers",
+  "log": {
+    "access": "./logs/access.log",
+    "application": "./logs/application.log",
+    "level": "VERBOSE"
+  },
+  "auth": {
+    "jwt": {
+      "enabled": true,
+      "algorithm": "HS999"
+    }
+  }
+}

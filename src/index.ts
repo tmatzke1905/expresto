@@ -1,4 +1,5 @@
 import express from 'express';
+import { createPrometheusRouter, prometheusMiddleware } from './lib/monitoring';
 import { loadConfig } from './lib/config';
 import { setupLogger, AppLogger } from './lib/logger';
 import { HookManager, LifecycleHook, HookContext } from './lib/hooks';
@@ -27,6 +28,12 @@ export async function createServer(configPath: string) {
 
   // Create express app
   const app = express();
+
+  // Attach Prometheus middleware for per-request metrics
+  app.use(prometheusMiddleware());
+
+  // Mount Prometheus metrics endpoint (before contextRoot!)
+  app.use(createPrometheusRouter(config, logger));
 
   const ctx: HookContext = { config, logger, app, eventBus, services };
 
@@ -69,8 +76,19 @@ export async function createServer(configPath: string) {
   });
 
   // Handle graceful shutdown
+  let server: import('http').Server | undefined;
   const shutdown = async () => {
     await hookManager.emit(LifecycleHook.SHUTDOWN, ctx);
+    if (server) {
+      logger.app.info('Shutting down HTTP server...');
+      try {
+        await new Promise<void>((resolve, reject) => {
+          server!.close((err) => (err ? reject(err) : resolve()));
+        });
+      } catch (err) {
+        logger.app.error('Error during HTTP server shutdown:', err);
+      }
+    }
     logger.app.info('expRESTo shutdown complete.');
     process.exit(0);
   };
@@ -87,8 +105,21 @@ export async function createServer(configPath: string) {
 if (require.main === module) {
   (async () => {
     const { app, config, logger } = await createServer('./middleware.config.json');
-    app.listen(config.port, config.host || '0.0.0.0', () => {
+    // Start server and capture instance for shutdown
+    const s = app.listen(config.port, config.host || '0.0.0.0', () => {
       logger.app.info(`expRESTo listening at http://${config.host || '0.0.0.0'}:${config.port}`);
     });
+    // Expose server instance to shutdown handler
+    // @ts-ignore
+    (app as any)._server = s;
+    // Find shutdown handler and assign server
+    // @ts-ignore
+    if (typeof shutdown === 'function') {
+      // @ts-ignore
+      shutdown.server = s;
+    }
+    // Assign to the closure variable for shutdown in createServer
+    // @ts-ignore
+    server = s;
   })();
 }
