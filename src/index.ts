@@ -2,7 +2,7 @@ import { updateServiceMetrics } from './lib/monitoring';
 import express from 'express';
 import { createPrometheusRouter, prometheusMiddleware } from './lib/monitoring';
 import { loadConfig, AppConfig } from './lib/config';
-import { setupLogger, AppLogger } from './lib/logger';
+import { setupLogger } from './lib/setupLogger';
 import { HookManager, LifecycleHook, HookContext } from './lib/hooks';
 import { EventBus } from './lib/events';
 import { SecurityProvider } from './lib/security';
@@ -30,6 +30,7 @@ export async function createServer(configInput: string | AppConfig) {
 
   // Initialize logger, hooks, events, services
   const logger = setupLogger(config);
+  logger.app.info('Logger ready');
   const hookManager = new HookManager();
   const eventBus = new EventBus();
   const services = new ServiceRegistry();
