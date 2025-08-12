@@ -2,7 +2,7 @@ import { updateRouteMetrics, updateServiceMetrics } from './monitoring';
 import fs from 'fs/promises';
 import path from 'path';
 import express from 'express';
-import type { ExtHandler } from './types';
+import type { ExtHandler, SecurityMode } from './types';
 import type { AppLogger } from './logger';
 import type { SecurityProvider } from './security';
 import { RouteRegistry } from './routing/route-registry';
@@ -13,7 +13,7 @@ interface RouteHandler {
   method: HttpMethod;
   path: string;
   handler: ExtHandler;
-  secure?: boolean;
+  secure?: SecurityMode;
   middlewares?: ExtHandler[];
 }
 
@@ -73,7 +73,9 @@ export class ControllerLoader {
                 args.push(...h.middlewares);
               }
 
-              if (h.secure !== false) {
+              if (h.secure !== undefined) {
+                args.push(this.security.guard(h.secure));
+              } else {
                 args.push(this.security.guard());
               }
 

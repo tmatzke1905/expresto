@@ -24,3 +24,5 @@ export type ExtHandler<
 > = RequestHandler<Params, ResBody, ReqBody, ReqQuery, Locals>;
 
 export type ExtNext = NextFunction;
+
+export type SecurityMode = 'basic' | 'jwt' | boolean;

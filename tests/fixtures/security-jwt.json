@@ -1,0 +1,26 @@
+{
+  "port": 3003,
+  "host": "127.0.0.1",
+  "contextRoot": "/api",
+  "controllersPath": "./tests/controllers",
+  "log": {
+    "access": "./logs/access.log",
+    "application": "./logs/application.log",
+    "level": "ERROR",
+    "traceRequests": false
+  },
+  "auth": {
+    "jwt": {
+      "enabled": true,
+      "secret": "testsecret",
+      "algorithm": "HS256",
+      "expiresIn": "1h"
+    },
+    "basic": { "enabled": false }
+  },
+  "cors": { "enabled": true, "options": { "origin": "*" } },
+  "helmet": { "enabled": true, "options": {} },
+  "rateLimit": { "enabled": false, "options": {} },
+  "cluster": { "enabled": false },
+  "metrics": { "endpoint": "/__metrics" }
+}

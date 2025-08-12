@@ -30,7 +30,34 @@ export async function createServer(configInput: string | AppConfig) {
 
   // Initialize logger, hooks, events, services
   const logger = setupLogger(config);
+
+  // Mask sensitive config values before logging (supports both array and map forms)
+  function maskConfigForLog(cfg: AppConfig): any {
+    const maskUsers = (users: any) => {
+      // If array of user objects [{ username, password }]
+      if (Array.isArray(users)) {
+        return users.map(u => ({ ...u, password: '***' }));
+      }
+      // If record map { username: password }
+      if (users && typeof users === 'object') {
+        return Object.fromEntries(Object.keys(users).map(u => [u, '***']));
+      }
+      return users;
+    };
+
+    const clone = JSON.parse(JSON.stringify(cfg));
+    if (clone.auth?.jwt?.secret) {
+      clone.auth.jwt.secret = '***';
+    }
+    if (clone.auth?.basic?.users) {
+      clone.auth.basic.users = maskUsers(clone.auth.basic.users);
+    }
+    return clone;
+  }
+
+  const maskedConfig = maskConfigForLog(config);
   logger.app.info('Logger ready');
+  logger.app.info('Loaded configuration', maskedConfig);
   const hookManager = new HookManager();
   const eventBus = new EventBus();
   const services = new ServiceRegistry();
@@ -74,7 +101,7 @@ export async function createServer(configInput: string | AppConfig) {
   await hookManager.emit(LifecycleHook.POST_INIT, ctx);
 
   // Access log middleware
-  app.use(log4js.connectLogger(logger.access, { level: 'auto' }));
+  app.use(log4js.connectLogger(logger.access, { level: 'auto', format: ':remote-addr ":method :url" :status :response-time ms' }));
 
   // Load and register controllers
   const loader = new ControllerLoader(config.controllersPath, logger, security);
@@ -82,9 +109,10 @@ export async function createServer(configInput: string | AppConfig) {
 
   // Global error handler
   app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    logger.app.error('Unhandled error:', err);
+    const status = err.status || err.statusCode || 500;
+    logger.app.error(`Error ${status}:`, err);
     eventBus.emit('error', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(status).json({ error: err.message || 'Internal Server Error' });
   });
 
   // Handle graceful shutdown

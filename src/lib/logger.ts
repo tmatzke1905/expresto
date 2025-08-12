@@ -1,4 +1,3 @@
-import { application } from 'express';
 import log4js from 'log4js';
 
 export interface AppLogger {
