@@ -1,0 +1,28 @@
+# Source
+src/
+tests/
+*.test.*
+*.spec.*
+
+# Configs (nur für Entwicklung)
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+eslint.config.*
+.prettierrc.*
+.editorconfig
+.roadmap.md
+ROADMAP.md
+
+# Build caches / Coverage
+coverage/
+*.tsbuildinfo
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Projekt-Meta (bleibt im Repo, aber nicht im npm-Paket)
+*.log
+.DS_Store
+Thumbs.db
