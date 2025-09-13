@@ -13,6 +13,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import log4js from 'log4js';
 import { otelMiddleware } from './lib/otel';
+import { HttpError } from './lib/errors';
 
 let server: import('http').Server | undefined;
 
@@ -104,7 +105,12 @@ export async function createServer(configInput: string | AppConfig) {
   await hookManager.emit(LifecycleHook.POST_INIT, ctx);
 
   // Access log middleware
-  app.use(log4js.connectLogger(logger.access, { level: 'auto', format: ':remote-addr ":method :url" :status :response-time ms' }));
+  app.use(
+    log4js.connectLogger(logger.access, {
+      level: 'auto',
+      format: ':remote-addr ":method :url" :status :response-time ms',
+    })
+  );
 
   // Load and register controllers
   const loader = new ControllerLoader(config.controllersPath, logger, security);
@@ -118,7 +124,7 @@ export async function createServer(configInput: string | AppConfig) {
     res.json({
       status: 'ok',
       uptime: process.uptime(),
-      services: Object.keys(services.getAll())
+      services: Object.keys(services.getAll()),
     });
   });
 
@@ -132,33 +138,76 @@ export async function createServer(configInput: string | AppConfig) {
     res.json(services.get('routes') || []);
   });
 
-  // Global error handler
-  app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    logger.app.error(`Error ${status}:`, err);
-    eventBus.emit('error', err);
-    res.status(status).json({ error: err.message || 'Internal Server Error' });
-  });
+  // Global error handler (structured JSON) — deferred so tests/consumers can attach routes first
+  const errorHandler: express.ErrorRequestHandler = (err: any, req, res, _next) => {
+    const isHttp = err instanceof HttpError || typeof (err as any)?.status === 'number';
+    const status: number = isHttp ? ((err as any).status ?? 500) : 500;
 
-  // Handle graceful shutdown
-  const shutdown = async () => {
-    await hookManager.emit(LifecycleHook.SHUTDOWN, ctx);
-    if (server) {
-      logger.app.info('Shutting down HTTP server...');
-      try {
-        await new Promise<void>((resolve, reject) => {
-          server!.close(err => (err ? reject(err) : resolve()));
-        });
-      } catch (err) {
-        logger.app.error('Error during HTTP server shutdown:', err);
-      }
+    const payload = {
+      error: {
+        message: (err as any)?.message || 'Internal Server Error',
+        code: (err as any)?.code,
+      },
+      requestId: req.headers['x-request-id'],
+    } as const;
+
+    logger.app.error('request_error', { status, url: req.originalUrl, method: req.method, err });
+    eventBus.emit('error', err);
+
+    if (!res.headersSent) {
+      res.status(status).json(payload);
     }
-    logger.app.info('expRESTo shutdown complete.');
-    process.exit(0);
   };
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  // Defer to next timers phase to ensure consumers/tests can register routes synchronously after createServer()
+  setTimeout(() => {
+    app.use(errorHandler);
+  }, 0);
+
+  // —— Graceful shutdown and fatal handlers ——
+  const SHUTDOWN_TIMEOUT_MS = 10_000;
+
+  const shutdown = async (reason?: unknown) => {
+    try {
+      logger.app.warn('Starting graceful shutdown...', { reason });
+      await hookManager.emit(LifecycleHook.SHUTDOWN, ctx);
+      if (server) {
+        logger.app.info('Shutting down HTTP server...');
+        try {
+          await new Promise<void>((resolve, reject) => {
+            server!.close(err => (err ? reject(err) : resolve()));
+          });
+        } catch (err) {
+          logger.app.error('Error during HTTP server shutdown:', err);
+        }
+      }
+      // flush log appenders
+      await new Promise<void>(resolve => {
+        try {
+          (log4js as any).shutdown?.(() => resolve());
+        } catch {
+        } finally {
+          resolve();
+        }
+      });
+      logger.app.info('expRESTo shutdown complete.');
+    } catch (e) {
+      logger.app.error('Error during shutdown', e);
+    } finally {
+      process.exit(0);
+    }
+  };
+
+  const onFatal = (type: string) => (err: any) => {
+    logger.app.fatal(`${type}:`, err);
+    const timer = setTimeout(() => process.exit(1), SHUTDOWN_TIMEOUT_MS).unref();
+    shutdown(type).finally(() => clearTimeout(timer));
+  };
+
+  process.on('unhandledRejection', onFatal('unhandledRejection'));
+  process.on('uncaughtException', onFatal('uncaughtException'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 
   return { app, config, logger, hookManager, eventBus, services };
 }
