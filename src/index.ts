@@ -12,6 +12,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import log4js from 'log4js';
+import { otelMiddleware } from './lib/otel';
 
 let server: import('http').Server | undefined;
 
@@ -87,6 +88,8 @@ export async function createServer(configInput: string | AppConfig) {
   if (config.rateLimit?.enabled) {
     app.use(rateLimit(config.rateLimit.options));
   }
+
+  app.use(otelMiddleware(config, logger));
 
   // Pre-initialization hook
   await hookManager.emit(LifecycleHook.PRE_INIT, ctx);

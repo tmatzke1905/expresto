@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import type { ValidateFunction } from 'ajv';
-import Ajv from 'ajv';
+import Ajv2020 from 'ajv/dist/2020';
 import addFormats from 'ajv-formats';
 
 let validate: ValidateFunction | null = null;
@@ -15,7 +15,7 @@ async function getValidator(): Promise<ValidateFunction> {
   );
   const schema = JSON.parse(file);
 
-  const ajv = new Ajv({ allErrors: true });
+  const ajv = new Ajv2020({ allErrors: true });
   addFormats(ajv);
 
   validate = ajv.compile(schema);
@@ -55,6 +55,12 @@ export interface AppConfig {
   auth?: AuthConfig;
   cluster?: { enabled?: boolean };
   metrics?: { endpoint?: string };
+  telemetry?: {
+    /** enable/disable OpenTelemetry HTTP span creation (default: false) */
+    enabled?: boolean;
+    /** logical service name (only used as span attribute; SDK init bleibt beim Host) */
+    serviceName?: string;
+  };
 }
 
 /**

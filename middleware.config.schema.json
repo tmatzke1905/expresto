@@ -1,42 +1,72 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "expRESTo Configuration Schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/expresto/middleware.config.schema.json",
+  "title": "expRESTo Middleware Config",
   "type": "object",
+  "additionalProperties": false,
   "required": ["port", "contextRoot", "controllersPath", "log"],
   "properties": {
-    "port": {
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 65535
-    },
-    "host": {
-      "type": "string"
-    },
-    "contextRoot": {
-      "type": "string",
-      "pattern": "^/.*"
-    },
-    "controllersPath": {
-      "type": "string"
-    },
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "host": { "type": "string" },
+    "contextRoot": { "type": "string", "pattern": "^/.*" },
+    "controllersPath": { "type": "string", "minLength": 1 },
+
     "log": {
       "type": "object",
-      "required": ["access", "application"],
+      "additionalProperties": false,
+      "required": ["access", "application", "level"],
       "properties": {
         "access": { "type": "string" },
         "application": { "type": "string" },
-        "level": {
-          "type": "string",
-          "enum": ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
-        },
+        "level": { "type": "string" },
         "traceRequests": { "type": "boolean" }
       }
     },
+
+    "cors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "options": { "type": "object" }
+      }
+    },
+
+    "helmet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "options": { "type": "object" }
+      }
+    },
+
+    "rateLimit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "options": { "type": "object" }
+      }
+    },
+
     "auth": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
+        "jwt": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "secret": { "type": "string" },
+            "algorithm": { "type": "string", "enum": ["HS256", "HS384", "HS512"] },
+            "expiresIn": { "type": "string" }
+          }
+        },
         "basic": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "enabled": { "type": "boolean" },
             "users": {
@@ -44,54 +74,29 @@
               "additionalProperties": { "type": "string" }
             }
           }
-        },
-        "jwt": {
-          "type": "object",
-          "properties": {
-            "enabled": { "type": "boolean" },
-            "secret": { "type": "string" },
-            "algorithm": {
-              "type": "string",
-              "enum": ["HS256", "HS384", "HS512", "RS256", "ES256"]
-            },
-            "expiresIn": { "type": "string" }
-          }
         }
       }
     },
-    "cors": {
-      "type": "object",
-      "properties": {
-        "enabled": { "type": "boolean" },
-        "options": { "type": "object" }
-      }
-    },
-    "helmet": {
-      "type": "object",
-      "properties": {
-        "enabled": { "type": "boolean" },
-        "options": { "type": "object" }
-      }
-    },
-    "rateLimit": {
-      "type": "object",
-      "properties": {
-        "enabled": { "type": "boolean" },
-        "options": { "type": "object" }
-      }
-    },
+
     "cluster": {
       "type": "object",
-      "properties": {
-        "enabled": { "type": "boolean" }
-      }
+      "additionalProperties": false,
+      "properties": { "enabled": { "type": "boolean" } }
     },
+
     "metrics": {
       "type": "object",
+      "additionalProperties": false,
+      "properties": { "endpoint": { "type": "string" } }
+    },
+
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "endpoint": { "type": "string" }
+        "enabled": { "type": "boolean" },
+        "serviceName": { "type": "string" }
       }
     }
-  },
-  "additionalProperties": false
+  }
 }

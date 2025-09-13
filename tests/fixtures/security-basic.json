@@ -20,5 +20,6 @@
   "helmet": { "enabled": true, "options": {} },
   "rateLimit": { "enabled": false, "options": {} },
   "cluster": { "enabled": false },
-  "metrics": { "endpoint": "/__metrics" }
+  "metrics": { "endpoint": "/__metrics" },
+  "telemetry": { "enabled": true, "serviceName": "expresto-test" }
 }
