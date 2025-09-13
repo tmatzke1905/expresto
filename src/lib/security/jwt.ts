@@ -1,39 +1,48 @@
-import { SignJWT, jwtVerify, JWTPayload, JWK } from 'jose';
+import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+
+/** Only allow safe HMAC algs by default */
+export type SupportedHmacAlg = 'HS256' | 'HS384' | 'HS512';
+
+function algOrDefault(alg?: string): SupportedHmacAlg {
+  // normalize & validate, fallback to HS512
+  const up = (alg || '').toUpperCase().trim();
+  if (up === 'HS256' || up === 'HS384' || up === 'HS512') return up;
+  return 'HS512';
+}
 
 /**
- * Generates a signed JWT using the given payload and secret.
+ * Sign a JWT with an HMAC secret.
+ * @param payload - arbitrary claims (will be placed in JWT payload)
+ * @param secret  - HMAC secret (utf8)
+ * @param algorithm - HS256|HS384|HS512 (default HS512)
+ * @param expiresIn - e.g. "1h", "15m" (forwarded to jose as `setExpirationTime`)
  */
 export async function signToken(
   payload: JWTPayload,
   secret: string,
-  algorithm: string = 'HS512',
-  options: { expiresIn?: string } = {}
+  algorithm?: string,
+  expiresIn?: string
 ): Promise<string> {
-  const encoder = new TextEncoder();
-  const key = encoder.encode(secret);
+  const alg = algOrDefault(algorithm);
+  const key = new TextEncoder().encode(secret);
 
-  const jwt = new SignJWT(payload)
-    .setProtectedHeader({ alg: algorithm, typ: 'JWT' })
-    .setIssuedAt()
-    .setExpirationTime(options.expiresIn || '1h');
+  let jwt = new SignJWT(payload).setProtectedHeader({ alg });
+  if (expiresIn) jwt = jwt.setExpirationTime(expiresIn);
 
-  return await jwt.sign(key);
+  return jwt.sign(key);
 }
 
 /**
- * Verifies a JWT and returns the decoded payload.
+ * Verify a JWT and return its payload.
+ * Throws on invalid/expired token.
  */
-export async function verifyToken(
+export async function verifyToken<T extends JWTPayload = JWTPayload>(
   token: string,
   secret: string,
-  algorithm: string = 'HS512'
-): Promise<JWTPayload> {
-  const encoder = new TextEncoder();
-  const key = encoder.encode(secret);
-
-  const { payload } = await jwtVerify(token, key, {
-    algorithms: [algorithm],
-  });
-
-  return payload;
+  algorithm?: string
+): Promise<T> {
+  const alg = algOrDefault(algorithm);
+  const key = new TextEncoder().encode(secret);
+  const { payload } = await jwtVerify(token, key, { algorithms: [alg] });
+  return payload as T;
 }
