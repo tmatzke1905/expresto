@@ -16,6 +16,14 @@ export class ServiceRegistry {
   }
 
   /**
+   * Sets a service instance, overwriting existing value if present.
+   * This behaves like Map.set and does not throw on duplicates.
+   */
+  set<T>(name: string, instance: T): void {
+    this.services.set(name, instance);
+  }
+
+  /**
    * Retrieves a service instance by name.
    * Throws if the service is not registered.
    */
@@ -38,6 +46,13 @@ export class ServiceRegistry {
    */
   remove(name: string): void {
     this.services.delete(name);
+  }
+
+  /**
+   * Deletes a service and returns whether it was present.
+   */
+  delete(name: string): boolean {
+    return this.services.delete(name);
   }
 
   /**

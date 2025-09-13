@@ -25,7 +25,7 @@ async function getValidator(): Promise<ValidateFunction> {
 export interface AuthConfig {
   jwt?: {
     enabled?: boolean;
-    secret: string;
+    secret?: string;
     algorithm?: string;
     expiresIn?: string;
   };
@@ -46,8 +46,8 @@ export interface AppConfig {
     level: string;
     traceRequests?: boolean;
   };
-  cors?: { options?: Record<string, any> };
-  helmet?: { options?: Record<string, any> };
+  cors?: { enabled?: boolean; options?: Record<string, any> };
+  helmet?: { enabled?: boolean; options?: Record<string, any> };
   rateLimit?: {
     enabled?: boolean;
     options: Record<string, any>;

@@ -107,6 +107,28 @@ export async function createServer(configInput: string | AppConfig) {
   const loader = new ControllerLoader(config.controllersPath, logger, security);
   await loader.load(app, config.contextRoot);
 
+  // Expose routes via ServiceRegistry for ops/introspection
+  services.set('routes', loader.getRegisteredRoutes());
+
+  // Health endpoint
+  app.get(`${config.contextRoot}/__health`, (_req, res) => {
+    res.json({
+      status: 'ok',
+      uptime: process.uptime(),
+      services: Object.keys(services.getAll())
+    });
+  });
+
+  // Config endpoint (masked)
+  app.get(`${config.contextRoot}/__config`, (_req, res) => {
+    res.json(maskedConfig);
+  });
+
+  // Routes introspection endpoint
+  app.get(`${config.contextRoot}/__routes`, (_req, res) => {
+    res.json(services.get('routes') || []);
+  });
+
   // Global error handler
   app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const status = err.status || err.statusCode || 500;

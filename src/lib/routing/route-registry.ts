@@ -1,78 +1,61 @@
-export interface RegisteredRoute {
-  method: string;
-  path: string;
-  secure: boolean;
-  source: string; // controller filename or source info
-}
+import path from 'path';
 
-/**
- * Registry that tracks all routes for validation and reporting.
- */
+export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
+
+export type RegisteredRoute = {
+  method: HttpMethod;
+  path: string; // vollständiger, montierter Pfad (inkl. contextRoot + controller.route + handler.path)
+  secure: 'basic' | 'jwt' | 'none';
+  source: string; // Controller-Dateiname
+};
+
 export class RouteRegistry {
-  private readonly routes: RegisteredRoute[] = [];
+  private routes: RegisteredRoute[] = [];
 
-  register(route: RegisteredRoute): void {
-    this.routes.push(route);
+  register(entry: RegisteredRoute): void {
+    // Normalize: lower-case method, posix style path
+    const norm: RegisteredRoute = {
+      method: entry.method.toLowerCase() as HttpMethod,
+      path: path.posix.normalize(entry.path),
+      secure: entry.secure,
+      source: entry.source,
+    };
+    this.routes.push(norm);
   }
 
-  /**
-   * Returns a list of registered routes sorted by path specificity.
-   */
+  getRoutes(): RegisteredRoute[] {
+    return [...this.routes];
+  }
+
   getSorted(): RegisteredRoute[] {
     return [...this.routes].sort((a, b) => {
-      // Static before dynamic, then by length
-      const aScore = this.scorePath(a.path);
-      const bScore = this.scorePath(b.path);
-      return bScore - aScore;
+      if (a.method !== b.method) return a.method.localeCompare(b.method);
+      if (a.path !== b.path) return a.path.localeCompare(b.path);
+      return a.secure.localeCompare(b.secure);
     });
   }
 
   /**
-   * Detects potential route conflicts.
-   * For now: naive match on same method + static path vs dynamic overlap.
+   * Findet potentielle Konflikte: identischer (method, path) mehrfach registriert.
+   * Gibt beschreibende Meldungen zurück (für Logging & Metriken).
    */
   detectConflicts(): string[] {
-    const conflicts: string[] = [];
-    const byMethod = new Map<string, RegisteredRoute[]>();
+    const msgs: string[] = [];
+    const seen = new Map<string, RegisteredRoute[]>();
 
-    for (const route of this.routes) {
-      const list = byMethod.get(route.method) || [];
-      for (const existing of list) {
-        if (this.possiblyConflicting(route.path, existing.path)) {
-          conflicts.push(
-            `Possible conflict: [${route.method.toUpperCase()}] ${route.path} <-> ${existing.path}`
-          );
-        }
+    for (const r of this.routes) {
+      const key = `${r.method} ${r.path}`;
+      const list = seen.get(key) || [];
+      list.push(r);
+      seen.set(key, list);
+    }
+
+    for (const [key, list] of seen.entries()) {
+      if (list.length > 1) {
+        const sources = list.map(r => `${r.source}(${r.secure})`).join(', ');
+        msgs.push(`Route conflict for [${key}] in: ${sources}`);
       }
-      list.push(route);
-      byMethod.set(route.method, list);
     }
-
-    return conflicts;
-  }
-
-  public getRoutes(): RegisteredRoute[] {
-    return [...this.routes];
-  }
-
-  /**
-   * Scores a path by static segments.
-   */
-  private scorePath(path: string): number {
-    const segments = path.split('/').filter(Boolean);
-    let score = 0;
-    for (const seg of segments) {
-      if (seg.startsWith(':'))
-        score -= 1; // dynamic
-      else score += 2; // static
-    }
-    return score;
-  }
-
-  /**
-   * Very simple heuristic for overlapping routes.
-   */
-  private possiblyConflicting(a: string, b: string): boolean {
-    return a === b || (a.includes('/:') && b.startsWith(a.split('/:')[0]));
+    return msgs;
   }
 }

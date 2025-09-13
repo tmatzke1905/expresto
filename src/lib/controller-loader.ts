@@ -1,4 +1,4 @@
-import { updateRouteMetrics, updateServiceMetrics } from './monitoring';
+import { updateRouteMetrics } from './monitoring';
 import fs from 'fs/promises';
 import path from 'path';
 import express from 'express';
@@ -8,6 +8,14 @@ import type { SecurityProvider } from './security';
 import { RouteRegistry } from './routing/route-registry';
 
 type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
+
+export type ControllerRouteInfo = {
+  method: HttpMethod;
+  path: string; // relative handler.path (ohne controller.route)
+  fullPath: string; // contextRoot + controller.route + handler.path
+  secure: 'basic' | 'jwt' | 'none';
+  controller: string; // Dateiname
+};
 
 interface RouteHandler {
   method: HttpMethod;
@@ -34,10 +42,11 @@ interface AdvancedController {
 type ControllerModule = SimpleController | AdvancedController;
 
 /**
- * Loads and registers all controller modules in the configured directory.
+ * Lädt Controller-Module und registriert deren Routen.
  */
 export class ControllerLoader {
   private readonly routeRegistry = new RouteRegistry();
+  private registered: ControllerRouteInfo[] = [];
 
   constructor(
     private controllerPath: string,
@@ -69,24 +78,43 @@ export class ControllerLoader {
               const method = h.method.toLowerCase() as HttpMethod;
               const args: ExtHandler[] = [];
 
-              if (h.middlewares) {
-                args.push(...h.middlewares);
-              }
+              if (h.middlewares) args.push(...h.middlewares);
 
+              // Security-Mode auflösen -> 'basic' | 'jwt' | 'none'
+              const secMode: 'basic' | 'jwt' | 'none' =
+                h.secure === 'basic'
+                  ? 'basic'
+                  : h.secure === 'jwt' || h.secure === true
+                    ? 'jwt'
+                    : 'none';
+
+              // Guard einhängen (Default = JWT, wie in SecurityProvider definiert)
               if (h.secure !== undefined) {
                 args.push(this.security.guard(h.secure));
               } else {
                 args.push(this.security.guard());
               }
 
+              // Handler registrieren
               args.push(h.handler);
               router[method](h.path, ...args);
 
-              // Register route for analysis
+              const full = path.posix.join(contextRoot, mod.route, h.path);
+
+              // Für Ops-Endpunkt
+              this.registered.push({
+                method,
+                path: h.path,
+                fullPath: full,
+                secure: secMode,
+                controller: file,
+              });
+
+              // Für Konflikt-Check & Metriken
               this.routeRegistry.register({
                 method,
-                path: path.posix.join(contextRoot, mod.route, h.path),
-                secure: h.secure !== false,
+                path: full,
+                secure: secMode, // <<— wichtig: string, nicht boolean
                 source: file,
               });
             }
@@ -94,40 +122,43 @@ export class ControllerLoader {
             throw new Error('Controller must export either "init()" or "handlers[]".');
           }
 
-          app.use(path.posix.join(contextRoot, mod.route), router);
-          this.logger.app.info(`Controller mounted at ${contextRoot}${mod.route}`);
+          app.use(path.posix.join(contextRoot, (mod as any).route), router);
+          this.logger.app.info(`Controller mounted at ${contextRoot}${(mod as any).route}`);
         } catch (err) {
           this.logger.app.error(`Failed to load controller ${file}:`, err);
         }
       }
 
-      // Detect and log route conflicts after all are registered
+      // Konflikte melden
       const conflicts = this.routeRegistry.detectConflicts();
       for (const msg of conflicts) {
         this.logger.app.warn(`[RouteRegistry] ${msg}`);
       }
 
+      // Metriken aktualisieren (Aggregat nach method/secure)
       const allRoutes = this.routeRegistry.getRoutes();
       const routeInfos = allRoutes.map(r => ({
         method: r.method,
-        secure: r.secure ?? true,
+        secure: r.secure, // <<— string mode durchreichen
       }));
       updateRouteMetrics(routeInfos, conflicts.length);
 
-      // Optional: log sorted route list (DEBUG or TRACE only)
+      // Optional: Liste ausgeben
       if (this.logger.app.isDebugEnabled()) {
         const sorted = this.routeRegistry.getSorted();
         this.logger.app.debug('[RouteRegistry] Registered Routes:');
         for (const r of sorted) {
-          this.logger.app.debug(
-            `  [${r.method.toUpperCase()}] ${r.path} (${r.secure ? 'secure' : 'public'})`
-          );
+          this.logger.app.debug(`  [${r.method.toUpperCase()}] ${r.path} (${r.secure})`);
         }
       }
-
     } catch (err) {
       this.logger.app.error('Failed to read controller directory:', err);
       throw err;
     }
+  }
+
+  /** Für /__routes Endpoint */
+  getRegisteredRoutes(): ControllerRouteInfo[] {
+    return [...this.registered];
   }
 }

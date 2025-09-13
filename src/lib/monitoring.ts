@@ -1,120 +1,139 @@
 import express from 'express';
-import client from 'prom-client';
-import type { AppLogger } from './logger';
+import client, { Counter, Histogram, Gauge, Registry } from 'prom-client';
 import type { AppConfig } from './config';
+import type { AppLogger } from './logger';
 
-// Create a default metrics registry
-const registry = new client.Registry();
+// Dedicated Registry (keine globalen Side-Effects, gut für Tests)
+const registry: Registry = new client.Registry();
 client.collectDefaultMetrics({ register: registry });
 
-const httpRequestCounter = new client.Counter({
-  name: 'expresto_http_requests_total',
+// Konsistente Labels
+const labelNames = ['method', 'route', 'status_code'] as const;
+
+// Kernmetriken
+const httpRequestsTotal = new Counter({
+  name: 'http_requests_total',
   help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status']
+  labelNames: labelNames as unknown as string[],
+  registers: [registry],
 });
 
-const httpRequestDuration = new client.Histogram({
-  name: 'expresto_http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status'],
-  buckets: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+const httpRequestDuration = new Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'HTTP request duration in seconds',
+  labelNames: labelNames as unknown as string[],
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+  registers: [registry],
 });
 
-const routeGauge = new client.Gauge({
-  name: 'expresto_routes_total',
-  help: 'Number of registered routes',
-  labelNames: ['method', 'secure']
+const httpErrorsTotal = new Counter({
+  name: 'http_errors_total',
+  help: 'Total number of HTTP responses with status >= 400',
+  labelNames: labelNames as unknown as string[],
+  registers: [registry],
 });
 
-const conflictGauge = new client.Gauge({
-  name: 'expresto_route_conflicts_total',
-  help: 'Number of conflicting route registrations'
+const httpInFlight = new Gauge({
+  name: 'http_requests_in_flight',
+  help: 'Current number of in-flight HTTP requests',
+  labelNames: ['route'] as unknown as string[],
+  registers: [registry],
 });
 
-const serviceGauge = new client.Gauge({
-  name: 'expresto_services_total',
-  help: 'Number of registered services',
-  labelNames: ['type']
+// Services-Metrik (optional, für Registry-Größe)
+const servicesRegistered = new Gauge({
+  name: 'services_registered_total',
+  help: 'Number of services registered in ServiceRegistry',
+  registers: [registry],
 });
 
-registry.registerMetric(httpRequestCounter);
-registry.registerMetric(httpRequestDuration);
-registry.registerMetric(routeGauge);
-registry.registerMetric(conflictGauge);
-registry.registerMetric(serviceGauge);
+// Routes/registry related gauges
+const routesRegistered = new Gauge({
+  name: 'routes_registered_total',
+  help: 'Number of registered routes by method and security mode',
+  labelNames: ['method', 'secure'] as unknown as string[],
+  registers: [registry],
+});
 
-export function createPrometheusRouter(config: AppConfig, logger: AppLogger): express.Router {
-  const router = express.Router();
-  const endpoint = config.metrics?.endpoint || '/__metrics';
+const routeConflicts = new Gauge({
+  name: 'route_conflicts_total',
+  help: 'Number of detected route conflicts at startup',
+  registers: [registry],
+});
 
-  router.get(endpoint, async (_req, res) => {
-    try {
-      res.set('Content-Type', registry.contentType);
-      res.send(await registry.metrics());
-    } catch (err) {
-      logger.app.error('Failed to collect Prometheus metrics:', err);
-      res.status(500).end();
-    }
-  });
-
-  logger.app.info(`Prometheus metrics endpoint mounted at ${endpoint}`);
-  return router;
+export function updateServiceMetrics(countOrKeys: number | string[]): void {
+  const count = Array.isArray(countOrKeys) ? countOrKeys.length : countOrKeys;
+  servicesRegistered.set(count);
 }
 
+/**
+ * Update route-related gauges. `routeInfos` is a shallow description of routes
+ * with method and security mode; `conflicts` is the amount of detected conflicts.
+ */
+export function updateRouteMetrics(
+  routeInfos: Array<{ method: string; secure: boolean | 'basic' | 'jwt' | 'none' }>,
+  conflicts: number
+): void {
+  // aggregate counts per (method, secure)
+  const counts = new Map<string, number>();
+  for (const r of routeInfos) {
+    const method = (r.method || 'get').toLowerCase();
+    const secure = r.secure === true ? 'jwt' : r.secure === false ? 'none' : ((r.secure as string) || 'none');
+    const key = `${method}|${secure}`;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  // set gauge values for all seen buckets
+  for (const [key, value] of counts.entries()) {
+    const [method, secure] = key.split('|');
+    routesRegistered.set({ method, secure }, value);
+  }
+  // update conflicts
+  routeConflicts.set(conflicts);
+}
+
+// Route-Label ermitteln
+function routeLabel(req: express.Request): string {
+  const base = req.baseUrl || '';
+  const route =
+    // @ts-ignore Express internals
+    req.route?.path || (req as any).route?.regexp || req.path || 'unknown';
+  const full = `${base}${typeof route === 'string' ? route : ''}`.replace(/\/+/, '/');
+  return full || 'unknown';
+}
 
 export function prometheusMiddleware(): express.RequestHandler {
   return (req, res, next) => {
-    const start = process.hrtime();
+    const route = routeLabel(req);
+    const method = (req.method || 'GET').toUpperCase();
+    const end = httpRequestDuration.startTimer({ method, route });
+    httpInFlight.inc({ route });
 
     res.on('finish', () => {
-      const duration = process.hrtime(start);
-      const seconds = duration[0] + duration[1] / 1e9;
-
-      const route = req.route?.path || req.path || 'unknown';
-
-      httpRequestCounter.inc({
-        method: req.method,
-        route,
-        status: res.statusCode
-      });
-
-      httpRequestDuration.observe({
-        method: req.method,
-        route,
-        status: res.statusCode
-      }, seconds);
+      const status = res.statusCode || 0;
+      const labels = { method, route, status_code: String(status) } as Record<string, string>;
+      httpRequestsTotal.inc(labels);
+      if (status >= 400) httpErrorsTotal.inc(labels);
+      end({ status_code: String(status) });
+      httpInFlight.dec({ route });
     });
 
     next();
   };
 }
 
-export function updateRouteMetrics(routes: { method: string; secure: boolean }[], conflicts: number) {
-  routeGauge.reset();
-  const counter = new Map<string, number>();
+export function createPrometheusRouter(config: AppConfig, _logger: AppLogger): express.Router {
+  const router = express.Router();
+  const endpoint = config.metrics?.endpoint || '/__metrics';
 
-  for (const route of routes) {
-    const key = `${route.method}|${route.secure}`;
-    counter.set(key, (counter.get(key) || 0) + 1);
-  }
+  router.get(endpoint, async (_req, res) => {
+    res.set('Content-Type', registry.contentType);
+    res.end(await registry.metrics());
+  });
 
-  for (const [key, value] of counter.entries()) {
-    const [method, secure] = key.split('|');
-    routeGauge.set({ method, secure }, value);
-  }
-
-  conflictGauge.set(conflicts);
+  return router;
 }
 
-export function updateServiceMetrics(serviceTypes: string[]) {
-  serviceGauge.reset();
-  const counter = new Map<string, number>();
-
-  for (const type of serviceTypes) {
-    counter.set(type, (counter.get(type) || 0) + 1);
-  }
-
-  for (const [type, count] of counter.entries()) {
-    serviceGauge.set({ type }, count);
-  }
+// Für Tests
+export function getPromRegistry(): Registry {
+  return registry;
 }

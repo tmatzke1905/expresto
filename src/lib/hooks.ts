@@ -21,7 +21,7 @@ export interface HookContext {
   config: AppConfig;
   logger: AppLogger;
   eventBus?: EventBus;
-  services?: ServiceRegistry;
+  services: ServiceRegistry;
 }
 
 type HookCallback = (ctx: HookContext) => void | Promise<void>;
@@ -39,6 +39,13 @@ export class HookManager {
     const list = this.listeners.get(hook) || [];
     list.push(callback);
     this.listeners.set(hook, list);
+  }
+
+  /**
+   * Alias for register() to match common event emitter style.
+   */
+  on(hook: LifecycleHook, callback: HookCallback): void {
+    this.register(hook, callback);
   }
 
   /**
