@@ -79,3 +79,23 @@ export async function loadConfig(configPath: string): Promise<AppConfig> {
   // ✅ safe cast after schema validation
   return config as AppConfig;
 }
+
+let config: AppConfig | undefined = undefined;
+
+/**
+ * Initializes and validates the configuration once at startup.
+ */
+export async function initConfig(configPath: string): Promise<void> {
+  config = await loadConfig(configPath);
+}
+
+/**
+ * Returns the validated configuration after initialization.
+ * Throws if not yet initialized.
+ */
+export function getConfig(): AppConfig {
+  if (!config) {
+    throw new Error('Configuration not initialized. Call initConfig() first.');
+  }
+  return config;
+}

@@ -59,3 +59,5 @@ export class RouteRegistry {
     return msgs;
   }
 }
+
+export const routeRegistry = new RouteRegistry();

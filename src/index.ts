@@ -1,20 +1,23 @@
-import { updateServiceMetrics } from './lib/monitoring';
-import express from 'express';
-import { createPrometheusRouter, prometheusMiddleware } from './lib/monitoring';
-import { loadConfig, AppConfig } from './lib/config';
-import { setupLogger } from './lib/setupLogger';
-import { HookManager, LifecycleHook, HookContext } from './lib/hooks';
-import { EventBus } from './lib/events';
-import { SecurityProvider } from './lib/security';
-import { ControllerLoader } from './lib/controller-loader';
-import { ServiceRegistry } from './lib/services/service-registry';
 import cors from 'cors';
-import helmet from 'helmet';
+import express from 'express';
 import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import log4js from 'log4js';
-import { otelMiddleware } from './lib/otel';
-import { HttpError } from './lib/errors';
 import * as fsp from 'node:fs/promises';
+import { AppConfig, getConfig, initConfig } from './lib/config';
+import { ControllerLoader } from './lib/controller-loader';
+import { HttpError } from './lib/errors';
+import { EventBus } from './lib/events';
+import { HookContext, HookManager, LifecycleHook } from './lib/hooks';
+import {
+  createPrometheusRouter,
+  prometheusMiddleware,
+  updateServiceMetrics,
+} from './lib/monitoring';
+import { otelMiddleware } from './lib/otel';
+import { SecurityProvider } from './lib/security';
+import { ServiceRegistry } from './lib/services/service-registry';
+import { setupLogger } from './lib/setupLogger';
 
 let server: import('http').Server | undefined;
 
@@ -26,7 +29,8 @@ export async function createServer(configInput: string | AppConfig) {
   // Load configuration
   let config: AppConfig;
   if (typeof configInput === 'string') {
-    config = await loadConfig(configInput);
+    await initConfig(configInput);
+    config = getConfig();
   } else {
     config = configInput;
   }
@@ -158,8 +162,16 @@ export async function createServer(configInput: string | AppConfig) {
   app.get(`${config.contextRoot}/__logs/:type`, async (req, res, next) => {
     try {
       const type = String(req.params.type);
-      const lines = Math.max(1, Math.min(5000, parseInt(String(req.query.lines ?? '200'), 10) || 200));
-      const filePath = type === 'application' ? config.log.application : type === 'access' ? config.log.access : undefined;
+      const lines = Math.max(
+        1,
+        Math.min(5000, parseInt(String(req.query.lines ?? '200'), 10) || 200)
+      );
+      const filePath =
+        type === 'application'
+          ? config.log.application
+          : type === 'access'
+            ? config.log.access
+            : undefined;
       if (!filePath) {
         const err: any = new HttpError(400, 'unknown log type');
         err.code = 'INVALID_LOG_TYPE';
