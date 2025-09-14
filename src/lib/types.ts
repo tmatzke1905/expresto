@@ -1,4 +1,3 @@
-// src/lib/types.ts
 import type { Request, Response, RequestHandler, NextFunction } from 'express';
 import type { ParsedQs } from 'qs';
 
@@ -12,7 +11,7 @@ export type ExtRequest<
 
 export type ExtResponse<
   ResBody = any,
-  Locals extends Record<string, any> = Record<string, any>
+  Locals extends Record<string, any> = Record<string, any>,
 > = Response<ResBody, Locals>;
 
 export type ExtHandler<
