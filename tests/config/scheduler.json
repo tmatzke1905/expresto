@@ -1,0 +1,22 @@
+{
+  "port": 3002,
+  "contextRoot": "/api",
+  "controllersPath": "./tests/controllers",
+  "log": {
+    "access": "/dev/null",
+    "application": "/dev/null",
+    "level": "DEBUG"
+  },
+  "scheduler": {
+    "enabled": true,
+    "mode": "attached",
+    "timezone": "Europe/Berlin",
+    "jobs": {
+      "dummy": {
+        "enabled": true,
+        "cron": "*/1 * * * *",
+        "module": "./tests/jobs/dummy.job.ts"
+      }
+    }
+  }
+}

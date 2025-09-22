@@ -97,6 +97,34 @@
         "enabled": { "type": "boolean" },
         "serviceName": { "type": "string" }
       }
+    },
+
+    "scheduler": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "mode": { "type": "string", "enum": ["attached", "standalone"] },
+        "timezone": { "type": "string" },
+        "jobs": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9_-]+$": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "cron": { "type": "string" },
+                "module": { "type": "string" },
+                "timezone": { "type": "string" },
+                "leaderOnly": { "type": "boolean" },
+                "options": { "type": "object" }
+              },
+              "required": ["enabled", "cron", "module"]
+            }
+          }
+        }
+      }
     }
   }
 }

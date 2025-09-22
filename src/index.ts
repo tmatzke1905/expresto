@@ -265,6 +265,12 @@ export async function createServer(configInput: string | AppConfig) {
 if (require.main === module) {
   (async () => {
     const { app, config, logger } = await createServer('./middleware.config.json');
+
+    if (config.scheduler?.enabled && config.scheduler?.mode === 'standalone') {
+      logger.app.info('expRESTo running in scheduler-only standalone mode (no HTTP server)');
+      return;
+    }
+
     // Start server and capture instance for shutdown
     server = app.listen(config.port, config.host || '0.0.0.0', () => {
       logger.app.info(`expRESTo listening at http://${config.host || '0.0.0.0'}:${config.port}`);

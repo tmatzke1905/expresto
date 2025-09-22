@@ -35,6 +35,22 @@ export interface AuthConfig {
   };
 }
 
+export interface SchedulerJobConfig {
+  enabled: boolean;
+  cron: string;
+  module: string;
+  timezone?: string;
+  leaderOnly?: boolean;
+  options?: Record<string, unknown>;
+}
+
+export interface SchedulerConfig {
+  enabled: boolean;
+  mode?: 'attached' | 'standalone';
+  timezone?: string;
+  jobs: Record<string, SchedulerJobConfig>;
+}
+
 export interface AppConfig {
   port: number;
   host?: string;
@@ -61,6 +77,7 @@ export interface AppConfig {
     /** logical service name (only used as span attribute; SDK init bleibt beim Host) */
     serviceName?: string;
   };
+  scheduler?: SchedulerConfig;
 }
 
 /**

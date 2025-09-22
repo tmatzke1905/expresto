@@ -12,6 +12,7 @@ export enum LifecycleHook {
   CUSTOM_MIDDLEWARE = 'customMiddleware',
   POST_INIT = 'postInit',
   SHUTDOWN = 'shutdown',
+  SECURITY = 'security',
 }
 
 /**
@@ -22,6 +23,7 @@ export interface HookContext {
   logger: AppLogger;
   eventBus?: EventBus;
   services: ServiceRegistry;
+  request?: import('express').Request;
 }
 
 type HookCallback = (ctx: HookContext) => void | Promise<void>;
@@ -63,3 +65,6 @@ export class HookManager {
     }
   }
 }
+
+// Create and export a global hook manager instance
+export const hookManager = new HookManager();

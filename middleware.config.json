@@ -36,5 +36,22 @@
   },
   "metrics": {
     "endpoint": "/__metrics"
+  },
+  "scheduler": {
+    "enabled": true,
+    "mode": "attached",
+    "jobs": {
+      "cleanup": {
+        "enabled": true,
+        "cron": "*/5 * * * *",
+        "module": "./src/jobs/cleanup.job.ts",
+        "options": { "maxAgeMinutes": 60 }
+      },
+      "heartbeat": {
+        "enabled": true,
+        "cron": "0 * * * * *",
+        "module": "./src/jobs/heartbeat.job.ts"
+      }
+    }
   }
 }

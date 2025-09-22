@@ -1,0 +1,27 @@
+{
+  "port": 3000,
+  "contextRoot": "/api",
+  "controllersPath": "./dist/controllers",
+  "log": {
+    "access": "./logs/access.log",
+    "application": "./logs/application.log",
+    "level": "ERROR"
+  },
+  "scheduler": {
+    "enabled": true,
+    "mode": "attached",
+    "jobs": {
+      "cleanup": {
+        "enabled": true,
+        "cron": "*/5 * * * *",
+        "module": "./dist/jobs/cleanup.job.js",
+        "options": { "maxAgeMinutes": 60 }
+      },
+      "heartbeat": {
+        "enabled": true,
+        "cron": "0 * * * * *",
+        "module": "./dist/jobs/heartbeat.job.js"
+      }
+    }
+  }
+}

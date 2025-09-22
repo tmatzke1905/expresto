@@ -1,4 +1,5 @@
 # expresto
+
 Middleware with all the bell and wistles
 
 # expRESTo
@@ -17,6 +18,7 @@ Middleware with all the bell and wistles
 - 🔁 Clustering support via Node.js cluster module
 - 📡 WebSocket integration (Socket.IO)
 - 📚 Route registry with conflict detection and debugging support
+- ⏱️ Integrated Scheduler with cron-based jobs (attached or standalone mode)
 
 ---
 
@@ -34,7 +36,25 @@ npm install
 npm start
 ```
 
+
 3. Configuration is loaded from `config/config.json`.
+
+### Development vs Production Config
+
+expRESTo supports separate configurations for development and production.
+
+- **Development**: Use `middleware.config.json` (points to TypeScript sources under `src/`).
+- **Production**: Use `middleware.config.prod.json` (points to transpiled JavaScript files under `dist/`).
+
+When starting the application, you can specify which config file to load:
+
+```bash
+# Development
+npm start -- ./middleware.config.json
+
+# Production
+npm start -- ./middleware.config.prod.json
+```
 
 ---
 
@@ -68,6 +88,7 @@ Full documentation is located in the `docs/` folder:
 - [WebSocket](./docs/websocket.md)
 - [Clustering](./docs/clustering.md)
 - [Service Registry](./docs/service-registry.md)
+- [Scheduler](./docs/scheduler.md)
 - [Event System](./docs/event-system.md)
 
 ---

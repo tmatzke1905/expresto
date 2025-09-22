@@ -34,6 +34,8 @@
     "build": "NODE_ENV=production tsup",
     "build:dev": "NODE_ENV=development tsup",
     "start": "node ./dist/index.cjs",
+    "start:dev": "ts-node src/index.ts ./middleware.config.json",
+    "start:prod": "node ./dist/index.cjs ./middleware.config.prod.json",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "validate": "ts-node src/cli.ts",
@@ -52,6 +54,7 @@
     "helmet": "^8.1.0",
     "jose": "^6.1.0",
     "log4js": "^6.9.1",
+    "node-cron": "^4.2.1",
     "prom-client": "^15.1.3",
     "socket.io": "^4.8.1"
   },
@@ -76,7 +79,8 @@
     "ts-node": "^10.9.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@jest/globals": "^30.1.2"
   },
   "engines": {
     "node": ">=18.0.0"
