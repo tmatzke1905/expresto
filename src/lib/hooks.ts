@@ -7,6 +7,10 @@ import type { ServiceRegistry } from './services/service-registry';
  * Enum of supported lifecycle hook types.
  */
 export enum LifecycleHook {
+  /**
+   * Runs before STARTUP and can be used to prepare configuration or minimal resources (like DB pool for config loading).
+   */
+  BEFORE_STARTUP = 'beforeStartup',
   STARTUP = 'startup',
   PRE_INIT = 'preInit',
   CUSTOM_MIDDLEWARE = 'customMiddleware',

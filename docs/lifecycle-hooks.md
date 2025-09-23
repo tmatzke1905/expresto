@@ -12,6 +12,7 @@ expRESTo provides a structured hook system that lets you attach custom logic to 
 
 | Hook              | Description |
 |------------------|-------------|
+| `BEFORE_STARTUP`  | Called before STARTUP; use to prepare or enrich configuration (e.g. load config from DB) or minimal resources. |
 | `STARTUP`         | Called before Express is initialized, but after configuration is loaded |
 | `PRE_INIT`        | Called immediately before Express middlewares and controllers are mounted |
 | `POST_INIT`       | Called after everything is mounted and ready to serve requests |
@@ -31,6 +32,8 @@ Lifecycle.on('STARTUP', async (ctx: HookContext) => {
   // e.g. initialize DB, register services
 });
 ```
+
+The `BEFORE_STARTUP` hook is suitable for preparing configuration before services start.
 
 Hook functions can be `async` and receive a `HookContext` object containing:
 
