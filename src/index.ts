@@ -218,6 +218,20 @@ export async function createServer(configInput: string | AppConfig) {
     try {
       logger.app.warn('Starting graceful shutdown...', { reason });
       await hookManager.emit(LifecycleHook.SHUTDOWN, ctx);
+
+      // Ensure all registered services shut down (with 30s timeout safeguard)
+      try {
+        const shutdownPromise = ctx.services.shutdownAll();
+        await Promise.race([
+          shutdownPromise,
+          new Promise<void>((_resolve, reject) =>
+            setTimeout(() => reject(new Error('Service shutdown timed out after 30s')), 30_000)
+          ),
+        ]);
+      } catch (err) {
+        logger.app.error('Error during service shutdown:', err);
+      }
+
       if (server) {
         logger.app.info('Shutting down HTTP server...');
         try {

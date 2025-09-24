@@ -10,13 +10,13 @@ expRESTo provides a structured hook system that lets you attach custom logic to 
 
 ## Available Hook Points
 
-| Hook              | Description |
-|------------------|-------------|
-| `BEFORE_STARTUP`  | Called before STARTUP; use to prepare or enrich configuration (e.g. load config from DB) or minimal resources. |
-| `STARTUP`         | Called before Express is initialized, but after configuration is loaded |
-| `PRE_INIT`        | Called immediately before Express middlewares and controllers are mounted |
-| `POST_INIT`       | Called after everything is mounted and ready to serve requests |
-| `SHUTDOWN`        | Called when the application is terminating (e.g., SIGTERM) |
+| Hook         | Description                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `INITIALIZE` | Called before STARTUP; use to prepare or enrich configuration (e.g. load config from DB) or minimal resources. |
+| `STARTUP`    | Called before Express is initialized, but after configuration is loaded                                        |
+| `PRE_INIT`   | Called immediately before Express middlewares and controllers are mounted                                      |
+| `POST_INIT`  | Called after everything is mounted and ready to serve requests                                                 |
+| `SHUTDOWN`   | Called when the application is terminating (e.g., SIGTERM)                                                     |
 
 ---
 
@@ -33,7 +33,7 @@ Lifecycle.on('STARTUP', async (ctx: HookContext) => {
 });
 ```
 
-The `BEFORE_STARTUP` hook is suitable for preparing configuration before services start.
+The `INITIALIZE` hook is suitable for preparing configuration before services start.
 
 Hook functions can be `async` and receive a `HookContext` object containing:
 
@@ -64,4 +64,4 @@ If a hook throws an error during `STARTUP` or `PRE_INIT`, the server will **not*
 
 ---
 
-_Last updated: 2025-09-14_
+_Last updated: 2025-09-24_

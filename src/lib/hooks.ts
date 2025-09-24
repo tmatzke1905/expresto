@@ -8,14 +8,32 @@ import type { ServiceRegistry } from './services/service-registry';
  */
 export enum LifecycleHook {
   /**
-   * Runs before STARTUP and can be used to prepare configuration or minimal resources (like DB pool for config loading).
+   * Called before STARTUP, used to prepare or enrich configuration or minimal resources (like DB pools).
    */
-  BEFORE_STARTUP = 'beforeStartup',
+  INITIALIZE = 'initialize',
+  /**
+   * Initialize services such as DB pools, caches, schedulers.
+   */
   STARTUP = 'startup',
+  /**
+   * Before Express app is initialized, configure middleware that must run early.
+   */
   PRE_INIT = 'preInit',
+  /**
+   * Hook to register custom Express middleware.
+   */
   CUSTOM_MIDDLEWARE = 'customMiddleware',
+  /**
+   * After Express is initialized and routes are loaded.
+   */
   POST_INIT = 'postInit',
+  /**
+   * Graceful shutdown phase for cleanup.
+   */
   SHUTDOWN = 'shutdown',
+  /**
+   * Runs after JWT validation, allows custom security checks.
+   */
   SECURITY = 'security',
 }
 
@@ -49,6 +67,19 @@ export class HookManager {
 
   /**
    * Alias for register() to match common event emitter style.
+   *
+   * Example usage:
+   * ```ts
+   * import { hookManager, LifecycleHook } from 'expresto';
+   *
+   * hookManager.on(LifecycleHook.STARTUP, async (ctx) => {
+   *   ctx.logger.app.info("Custom service started");
+   *   ctx.services.set("myService", new MyService());
+   * });
+   * ```
+   *
+   * @param hook The lifecycle hook type to register against
+   * @param callback Async or sync function executed when the hook is emitted
    */
   on(hook: LifecycleHook, callback: HookCallback): void {
     this.register(hook, callback);

@@ -12,7 +12,7 @@ export class ServiceRegistry {
     if (this.services.has(name)) {
       throw new Error(`Service '${name}' is already registered.`);
     }
-    this.services.set(name, instance);
+    this.set(name, instance);
   }
 
   /**
@@ -21,6 +21,9 @@ export class ServiceRegistry {
    */
   set<T>(name: string, instance: T): void {
     this.services.set(name, instance);
+    if (!(instance && (typeof (instance as any).shutdown === 'function' || typeof (instance as any).close === 'function'))) {
+      console.warn(`Service '${name}' does not have shutdown or close method.`);
+    }
   }
 
   /**
@@ -67,5 +70,30 @@ export class ServiceRegistry {
    */
   getAll(): Record<string, unknown> {
     return Object.fromEntries(this.services.entries());
+  }
+  /**
+   * Attempts to gracefully shut down all registered services.
+   * Calls `shutdown` or `close` if available.
+   *
+   * Note: Services are expected to implement `shutdown` or `close` methods for graceful cleanup,
+   * but this is not enforced. If neither method is found, a warning is logged.
+   */
+  async shutdownAll(): Promise<void> {
+    for (const [name, service] of this.services.entries()) {
+      try {
+        console.log(`Shutting down service: ${name}`);
+        if (service && typeof (service as any).shutdown === 'function') {
+          await (service as any).shutdown();
+        } else if (service && typeof (service as any).close === 'function') {
+          await (service as any).close();
+        } else {
+          console.warn(`Service '${name}' does not have shutdown or close method.`);
+        }
+        console.log(`Service '${name}' shut down successfully.`);
+      } catch (err) {
+        console.error(`Error shutting down service '${name}':`, err);
+      }
+    }
+    this.services.clear();
   }
 }
