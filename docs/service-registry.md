@@ -39,6 +39,7 @@ hookManager.on(LifecycleHook.STARTUP, ctx => {
 });
 ```
 
+
 ### Graceful shutdown with timeout
 
 ```ts
@@ -50,6 +51,18 @@ hookManager.on(LifecycleHook.SHUTDOWN, async ctx => {
   }
 });
 ```
+
+### Signal handling (SIGTERM / SIGINT)
+
+expRESTo integrates signal handling by default.  
+When the process receives `SIGTERM` or `SIGINT`, the framework:
+
+- Logs the shutdown reason
+- Executes all registered `SHUTDOWN` hooks
+- Calls `ctx.services.shutdownAll({ timeoutMs: 30000 })` to terminate services
+- Forces exit if services do not shut down within the timeout
+
+You usually do not need to add this manually, but you can override the behavior if necessary.
 
 ### Startup failure rollback
 
