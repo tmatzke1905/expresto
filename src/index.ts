@@ -16,6 +16,7 @@ import {
 } from './lib/monitoring';
 import { otelMiddleware } from './lib/otel';
 import { SecurityProvider } from './lib/security';
+import { WebSocketManager } from './lib/websocket/websocket-manager';
 import { ServiceRegistry } from './lib/services/service-registry';
 import { setupLogger } from './lib/setupLogger';
 
@@ -250,8 +251,7 @@ export async function createServer(configInput: string | AppConfig) {
       await new Promise<void>(resolve => {
         try {
           (log4js as any).shutdown?.(() => resolve());
-        } catch {
-        } finally {
+        } catch { /* empty */ } finally {
           resolve();
         }
       });
@@ -282,7 +282,9 @@ export async function createServer(configInput: string | AppConfig) {
 // when this file is executed directly via `node`, and not when imported as a module.
 if (require.main === module) {
   (async () => {
-    const { app, config, logger } = await createServer('./middleware.config.json');
+    const { app, config, logger, eventBus, services } = await createServer(
+      './middleware.config.json'
+    );
 
     if (config.scheduler?.enabled && config.scheduler?.mode === 'standalone') {
       logger.app.info('expRESTo running in scheduler-only standalone mode (no HTTP server)');
@@ -293,5 +295,13 @@ if (require.main === module) {
     server = app.listen(config.port, config.host || '0.0.0.0', () => {
       logger.app.info(`expRESTo listening at http://${config.host || '0.0.0.0'}:${config.port}`);
     });
+
+    // Optional WebSocket support on the same HTTP server
+    const wsConfig = (config as any).websocket;
+    if (wsConfig?.enabled) {
+      const wsManager = new WebSocketManager(server!, config, logger, eventBus, services);
+      services.set('websocketManager', wsManager as any);
+      logger.app.info('WebSocket support enabled on shared HTTP server');
+    }
   })();
 }

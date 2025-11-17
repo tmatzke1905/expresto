@@ -78,7 +78,8 @@ export function updateRouteMetrics(
   const counts = new Map<string, number>();
   for (const r of routeInfos) {
     const method = (r.method || 'get').toLowerCase();
-    const secure = r.secure === true ? 'jwt' : r.secure === false ? 'none' : ((r.secure as string) || 'none');
+    const secure =
+      r.secure === true ? 'jwt' : r.secure === false ? 'none' : (r.secure as string) || 'none';
     const key = `${method}|${secure}`;
     counts.set(key, (counts.get(key) || 0) + 1);
   }
@@ -94,9 +95,7 @@ export function updateRouteMetrics(
 // Route-Label ermitteln
 function routeLabel(req: express.Request): string {
   const base = req.baseUrl || '';
-  const route =
-    // @ts-ignore Express internals
-    req.route?.path || (req as any).route?.regexp || req.path || 'unknown';
+  const route = req.route?.path || (req as any).route?.regexp || req.path || 'unknown';
   const full = `${base}${typeof route === 'string' ? route : ''}`.replace(/\/+/, '/');
   return full || 'unknown';
 }

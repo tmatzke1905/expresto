@@ -60,7 +60,9 @@ export function otelMiddleware(config: AppConfig, logger: AppLogger): RequestHan
         try {
           span.setStatus({ code: SpanStatusCode.ERROR });
           span.end();
-        } catch {}
+        } catch {
+          /* empty */
+        }
         logger.app.warn('otelMiddleware error', err as any);
         next();
       }

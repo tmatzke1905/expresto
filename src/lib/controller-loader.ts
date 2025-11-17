@@ -123,7 +123,7 @@ export class ControllerLoader {
               });
             }
           } else {
-            throw new Error('Controller must export either \"init()\" or \"handlers[]\".');
+            throw new Error('Controller must export either "init()" or "handlers[]".');
           }
 
           app.use(path.posix.join(contextRoot, (mod as any).route), router);
