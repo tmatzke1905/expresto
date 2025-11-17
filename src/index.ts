@@ -100,7 +100,8 @@ export async function createServer(configInput: string | AppConfig) {
   await hookManager.emit(LifecycleHook.PRE_INIT, ctx);
 
   // Initialize security provider (e.g. JWT, Basic Auth)
-  const security = new SecurityProvider(config.auth, logger);
+  // Initialize security provider (JWT, Basic Auth, SECURITY hooks)
+  const security = new SecurityProvider(config, logger, hookManager, services, eventBus);
 
   // Custom middleware hook
   await hookManager.emit(LifecycleHook.CUSTOM_MIDDLEWARE, ctx);

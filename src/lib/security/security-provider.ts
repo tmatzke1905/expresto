@@ -1,36 +1,120 @@
 // src/lib/security/security-provider.ts
-import { Request, Response, NextFunction } from 'express';
-import { jwtVerify, JWTVerifyResult } from 'jose';
-import { HttpError } from '../errors';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import crypto from 'crypto';
 import type { AppLogger } from '../logger';
 import type { AppConfig } from '../config';
 import type { HookManager } from '../hooks';
 import { LifecycleHook } from '../hooks';
 import type { ServiceRegistry } from '../services/service-registry';
 import type { EventBus } from '../events';
+import { verifyToken, type SupportedHmacAlg } from './jwt';
+import { HttpError } from '../errors';
 
+export type RouteSecurityMeta = {
+  mode: 'basic' | 'jwt' | 'none';
+  controller: string;
+  fullPath: string;
+  handlerPath: string;
+  method: string;
+};
+
+/**
+ * Zentraler SecurityProvider für JWT & Basic Auth + SECURITY-Hooks.
+ *
+ * Verantwortlichkeiten:
+ * - JWT-Validierung (Header: Authorization: Bearer <token>)
+ * - Basic Auth (Authorization: Basic <base64>)
+ * - Setzt req.auth (und req.user für Backwards-Kompatibilität)
+ * - Ruft LifecycleHook.SECURITY mit HookContext + request auf
+ *
+ * Projekte hängen sich mit SECURITY-Hooks ein und prüfen Rollen/Claims/Resources selbst.
+ */
 export class SecurityProvider {
+  private readonly logger: AppLogger;
+
+  // JWT
+  private readonly jwtEnabled: boolean;
+  private readonly jwtSecret: string;
+  private readonly jwtAlgorithm: SupportedHmacAlg;
+
+  // Basic
+  private readonly basicEnabled: boolean;
+  private readonly basicUsers?:
+    | Record<string, string>
+    | Array<{ username: string; password: string }>;
+
   constructor(
-    private config: AppConfig,
-    private logger: AppLogger,
-    private hooks?: HookManager,
-    private services?: ServiceRegistry,
-    private eventBus?: EventBus
-  ) {}
+    private readonly config: AppConfig,
+    logger: AppLogger,
+    private readonly hooks?: HookManager,
+    private readonly services?: ServiceRegistry,
+    private readonly eventBus?: EventBus
+  ) {
+    this.logger = logger;
+
+    const auth = config.auth;
+
+    // JWT settings (from config.auth.jwt)
+    this.jwtEnabled = auth?.jwt?.enabled ?? true;
+    this.jwtSecret = auth?.jwt?.secret || 'default_secret';
+    const alg = (auth?.jwt?.algorithm || 'HS512') as string;
+    this.jwtAlgorithm = ['HS256', 'HS384', 'HS512'].includes(alg.toUpperCase())
+      ? (alg.toUpperCase() as SupportedHmacAlg)
+      : 'HS512';
+
+    // Basic settings (from config.auth.basic)
+    this.basicEnabled = !!auth?.basic?.enabled;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.basicUsers = (auth as any)?.basic?.users;
+  }
 
   /**
-   * Express middleware that checks JWT and emits SECURITY hook for custom checks.
+   * Backwards-kompatible Guard-API für Advanced-Controller ohne Route-Metadaten.
+   * Nutzt generische Dummy-Metadaten.
    */
-  async middleware(req: Request, res: Response, next: NextFunction) {
-    try {
-      const token = this.extractToken(req);
-      const decoded = await this.verifyToken(token);
+  guard(mode?: 'basic' | 'jwt' | boolean): RequestHandler {
+    let secMode: 'basic' | 'jwt' | 'none';
 
-      // Attach decoded payload to request context (req.auth)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (req as any).auth = decoded;
+    if (mode === 'basic') {
+      secMode = 'basic';
+    } else if (mode === 'jwt' || mode === true || (mode === undefined && this.jwtEnabled)) {
+      secMode = 'jwt';
+    } else {
+      secMode = 'none';
+    }
 
-      // Emit SECURITY lifecycle hook if handlers are registered
+    const meta: RouteSecurityMeta = {
+      mode: secMode,
+      controller: 'unknown',
+      fullPath: 'unknown',
+      handlerPath: 'unknown',
+      method: 'unknown',
+    };
+
+    return this.createMiddleware(meta);
+  }
+
+  /**
+   * Erzeugt eine Security-Middleware für eine konkrete Route mit Metadaten.
+   */
+  createMiddleware(meta: RouteSecurityMeta): RequestHandler {
+    return (req: Request, res: Response, next: NextFunction) => {
+      this.handleRequest(req, res, next, meta).catch(err => next(err));
+    };
+  }
+
+  private async handleRequest(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+    meta: RouteSecurityMeta
+  ): Promise<void> {
+    // Route-Metadaten am Request verfügbar machen
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (req as any).routeMeta = meta;
+
+    // Offene Route: keine Authentisierung, aber SECURITY-Hooks können trotzdem lauschen
+    if (meta.mode === 'none') {
       if (this.hooks && this.services) {
         await this.hooks.emit(LifecycleHook.SECURITY, {
           config: this.config,
@@ -40,39 +124,114 @@ export class SecurityProvider {
           request: req,
         });
       }
-
       next();
-    } catch (err) {
-      next(err);
+      return;
     }
+
+    if (meta.mode === 'basic') {
+      await this.handleBasic(req, res);
+    } else if (meta.mode === 'jwt') {
+      await this.handleJwt(req);
+    }
+
+    // Nach erfolgreicher Authentisierung: projektspezifische Checks via SECURITY-Hook
+    if (this.hooks && this.services) {
+      await this.hooks.emit(LifecycleHook.SECURITY, {
+        config: this.config,
+        logger: this.logger,
+        services: this.services,
+        eventBus: this.eventBus,
+        request: req,
+      });
+    }
+
+    next();
   }
 
-  /**
-   * Extracts Bearer token from Authorization header
-   */
-  extractToken(req: Request): string {
-    const auth = req.headers.authorization;
-    if (!auth?.startsWith('Bearer ')) {
-      throw new HttpError(401, 'Missing or invalid Authorization header');
+  private async handleJwt(req: Request): Promise<void> {
+    if (!this.jwtEnabled) {
+      return;
     }
-    return auth.slice(7);
-  }
 
-  /**
-   * Verifies the JWT token using configured secret or key
-   */
-  async verifyToken(token: string): Promise<Record<string, unknown>> {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      this.logger.app.warn('JWT: Missing or invalid Authorization header');
+      throw new HttpError(401, 'Unauthorized');
+    }
+
+    const token = authHeader.substring(7);
+
     try {
-      const secret = this.config.auth?.jwt?.secret;
-      if (!secret) {
-        throw new Error('JWT secret is not configured');
-      }
-      const key: Uint8Array = new TextEncoder().encode(secret);
-      const result: JWTVerifyResult = await jwtVerify(token, key);
-      return result.payload;
+      const payload = await verifyToken(token, this.jwtSecret, this.jwtAlgorithm);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (req as any).auth = payload;
+      // Backwards-Kompatibilität
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (req as any).user = payload;
     } catch (err) {
-      this.logger.app.warn('JWT verification failed', err);
-      throw new HttpError(401, 'Invalid or expired token');
+      this.logger.app.warn('JWT: Invalid token', err);
+      throw new HttpError(403, 'Forbidden');
     }
+  }
+
+  private async handleBasic(req: Request, res: Response): Promise<void> {
+    if (!this.basicEnabled) {
+      return;
+    }
+
+    const header = req.headers['authorization'];
+    if (!header || !header.startsWith('Basic ')) {
+      this.logger.app.warn('BasicAuth: Missing or invalid Authorization header');
+      res.set('WWW-Authenticate', 'Basic realm="expresto", charset="UTF-8"');
+      throw new HttpError(401, 'Unauthorized');
+    }
+
+    const base64 = header.slice(6).trim();
+    let decoded: string;
+    try {
+      decoded = Buffer.from(base64, 'base64').toString('utf8');
+    } catch {
+      this.logger.app.warn('BasicAuth: Cannot decode credentials');
+      res.set('WWW-Authenticate', 'Basic realm="expresto", charset="UTF-8"');
+      throw new HttpError(401, 'Unauthorized');
+    }
+
+    const i = decoded.indexOf(':');
+    const username = i >= 0 ? decoded.slice(0, i) : '';
+    const password = i >= 0 ? decoded.slice(i + 1) : '';
+
+    if (!this.checkBasicCredentials(username, password)) {
+      this.logger.app.warn('BasicAuth: Invalid credentials for user', username);
+      res.set('WWW-Authenticate', 'Basic realm="expresto", charset="UTF-8"');
+      throw new HttpError(401, 'Unauthorized');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (req as any).auth = { username, auth: 'basic' };
+    // Backwards-Kompatibilität
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (req as any).user = { username, auth: 'basic' };
+  }
+
+  private checkBasicCredentials(username: string, password: string): boolean {
+    if (!this.basicUsers) return false;
+
+    const safeEq = (a: string, b: string) => {
+      const ab = Buffer.from(a);
+      const bb = Buffer.from(b);
+      if (ab.length !== bb.length) return false;
+      return crypto.timingSafeEqual(ab, bb);
+    };
+
+    if (Array.isArray(this.basicUsers)) {
+      for (const u of this.basicUsers) {
+        if (u.username === username && safeEq(u.password, password)) return true;
+      }
+      return false;
+    }
+
+    const expected = (this.basicUsers as Record<string, string>)[username];
+    if (typeof expected !== 'string') return false;
+    return safeEq(expected, password);
   }
 }

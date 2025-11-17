@@ -4,7 +4,7 @@ import path from 'path';
 import express from 'express';
 import type { ExtHandler, SecurityMode } from './types';
 import type { AppLogger } from './logger';
-import type { SecurityProvider } from './security';
+import type { SecurityProvider, RouteSecurityMeta } from './security';
 import { RouteRegistry } from './routing/route-registry';
 
 type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options';
@@ -88,18 +88,22 @@ export class ControllerLoader {
                     ? 'jwt'
                     : 'none';
 
-              // Guard einhängen (Default = JWT, wie in SecurityProvider definiert)
-              if (h.secure !== undefined) {
-                args.push(this.security.guard(h.secure));
-              } else {
-                args.push(this.security.guard());
-              }
+              const full = path.posix.join(contextRoot, mod.route, h.path);
+
+              const meta: RouteSecurityMeta = {
+                mode: secMode,
+                controller: file,
+                fullPath: full,
+                handlerPath: h.path,
+                method,
+              };
+
+              // Security-Middleware mit Route-Metadaten einhängen
+              args.push(this.security.createMiddleware(meta));
 
               // Handler registrieren
               args.push(h.handler);
               router[method](h.path, ...args);
-
-              const full = path.posix.join(contextRoot, mod.route, h.path);
 
               // Für Ops-Endpunkt
               this.registered.push({
@@ -114,12 +118,12 @@ export class ControllerLoader {
               this.routeRegistry.register({
                 method,
                 path: full,
-                secure: secMode, // <<— wichtig: string, nicht boolean
+                secure: secMode,
                 source: file,
               });
             }
           } else {
-            throw new Error('Controller must export either "init()" or "handlers[]".');
+            throw new Error('Controller must export either \"init()\" or \"handlers[]\".');
           }
 
           app.use(path.posix.join(contextRoot, (mod as any).route), router);
@@ -139,7 +143,7 @@ export class ControllerLoader {
       const allRoutes = this.routeRegistry.getRoutes();
       const routeInfos = allRoutes.map(r => ({
         method: r.method,
-        secure: r.secure, // <<— string mode durchreichen
+        secure: r.secure,
       }));
       updateRouteMetrics(routeInfos, conflicts.length);
 
