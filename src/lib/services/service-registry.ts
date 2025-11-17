@@ -21,7 +21,13 @@ export class ServiceRegistry {
    */
   set<T>(name: string, instance: T): void {
     this.services.set(name, instance);
-    if (!(instance && (typeof (instance as any).shutdown === 'function' || typeof (instance as any).close === 'function'))) {
+    if (
+      !(
+        instance &&
+        (typeof (instance as any).shutdown === 'function' ||
+          typeof (instance as any).close === 'function')
+      )
+    ) {
       console.warn(`Service '${name}' does not have shutdown or close method.`);
     }
   }
@@ -82,14 +88,21 @@ export class ServiceRegistry {
     for (const [name, service] of this.services.entries()) {
       try {
         console.log(`Shutting down service: ${name}`);
+        let handled = false;
+
         if (service && typeof (service as any).shutdown === 'function') {
           await (service as any).shutdown();
+          handled = true;
         } else if (service && typeof (service as any).close === 'function') {
           await (service as any).close();
+          handled = true;
         } else {
           console.warn(`Service '${name}' does not have shutdown or close method.`);
         }
-        console.log(`Service '${name}' shut down successfully.`);
+
+        if (handled) {
+          console.log(`Service '${name}' shut down successfully.`);
+        }
       } catch (err) {
         console.error(`Error shutting down service '${name}':`, err);
       }

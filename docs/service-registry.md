@@ -39,13 +39,13 @@ hookManager.on(LifecycleHook.STARTUP, ctx => {
 });
 ```
 
-
 ### Graceful shutdown with timeout
 
 ```ts
 hookManager.on(LifecycleHook.SHUTDOWN, async ctx => {
   try {
-    await ctx.services.shutdownAll({ timeoutMs: 30000 }); // 30 seconds timeout
+    await ctx.services.shutdownAll();
+    // Timeout-Handling übernimmt der zentrale Shutdown in index.ts
   } catch (error) {
     console.error('Failed to shutdown all services gracefully:', error);
   }

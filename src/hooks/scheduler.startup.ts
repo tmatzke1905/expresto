@@ -3,7 +3,7 @@ import { SchedulerService } from '../lib/scheduler/scheduler-service';
 import type { SchedulerConfig, SchedulerJobConfig, SchedulerModule } from '../lib/scheduler/types';
 
 hookManager.on(LifecycleHook.STARTUP, async (ctx: HookContext) => {
-  const schedCfg = (ctx.config as any).scheduler as SchedulerConfig | undefined;
+  const schedCfg: SchedulerConfig | undefined = ctx.config.scheduler;
   if (!schedCfg?.enabled) {
     ctx.logger.app.info('[Scheduler] disabled');
     return;

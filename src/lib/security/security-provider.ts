@@ -3,31 +3,36 @@ import { Request, Response, NextFunction } from 'express';
 import { jwtVerify, JWTVerifyResult } from 'jose';
 import { HttpError } from '../errors';
 import type { AppLogger } from '../logger';
-import { AuthConfig } from '../config';
+import type { AppConfig } from '../config';
+import type { HookManager } from '../hooks';
+import { LifecycleHook } from '../hooks';
+import type { ServiceRegistry } from '../services/service-registry';
+import type { EventBus } from '../events';
 
 export class SecurityProvider {
-
   constructor(
-    private config: AuthConfig,
+    private config: AppConfig,
     private logger: AppLogger,
-    private hooks?: any,
-    private services?: any,
-    private eventBus?: any
+    private hooks?: HookManager,
+    private services?: ServiceRegistry,
+    private eventBus?: EventBus
   ) {}
 
   /**
-   * Express middleware that checks JWT and applies all registered interceptors
+   * Express middleware that checks JWT and emits SECURITY hook for custom checks.
    */
   async middleware(req: Request, res: Response, next: NextFunction) {
     try {
       const token = this.extractToken(req);
       const decoded = await this.verifyToken(token);
 
-      req.auth = decoded;
+      // Attach decoded payload to request context (req.auth)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (req as any).auth = decoded;
 
-      // Emit SECURITY hook if any handlers are registered
-      if (this.hooks?.emit) {
-        await this.hooks.emit('security', {
+      // Emit SECURITY lifecycle hook if handlers are registered
+      if (this.hooks && this.services) {
+        await this.hooks.emit(LifecycleHook.SECURITY, {
           config: this.config,
           logger: this.logger,
           services: this.services,
@@ -58,7 +63,7 @@ export class SecurityProvider {
    */
   async verifyToken(token: string): Promise<Record<string, unknown>> {
     try {
-      const secret = this.config.jwt?.secret;
+      const secret = this.config.auth?.jwt?.secret;
       if (!secret) {
         throw new Error('JWT secret is not configured');
       }

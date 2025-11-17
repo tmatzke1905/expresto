@@ -8,7 +8,7 @@ import { AppConfig, getConfig, initConfig } from './lib/config';
 import { ControllerLoader } from './lib/controller-loader';
 import { HttpError } from './lib/errors';
 import { EventBus } from './lib/events';
-import { HookContext, HookManager, LifecycleHook } from './lib/hooks';
+import { HookContext, hookManager, LifecycleHook } from './lib/hooks';
 import {
   createPrometheusRouter,
   prometheusMiddleware,
@@ -65,7 +65,6 @@ export async function createServer(configInput: string | AppConfig) {
   const maskedConfig = maskConfigForLog(config);
   logger.app.info('Logger ready');
   logger.app.info('Loaded configuration', maskedConfig);
-  const hookManager = new HookManager();
   const eventBus = new EventBus();
   const services = new ServiceRegistry();
 
@@ -213,6 +212,7 @@ export async function createServer(configInput: string | AppConfig) {
 
   // —— Graceful shutdown and fatal handlers ——
   const SHUTDOWN_TIMEOUT_MS = 10_000;
+  const SERVICE_SHUTDOWN_TIMEOUT_MS = 30_000;
 
   const shutdown = async (reason?: unknown) => {
     try {
@@ -225,7 +225,10 @@ export async function createServer(configInput: string | AppConfig) {
         await Promise.race([
           shutdownPromise,
           new Promise<void>((_resolve, reject) =>
-            setTimeout(() => reject(new Error('Service shutdown timed out after 30s')), 30_000)
+            setTimeout(
+              () => reject(new Error('Service shutdown timed out after 30s')),
+              SERVICE_SHUTDOWN_TIMEOUT_MS
+            )
           ),
         ]);
       } catch (err) {
