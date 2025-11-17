@@ -1,6 +1,8 @@
 # expresto
 
-Middleware with all the bell and wistles
+!!!Still in development!!!
+
+Middleware with all the bell and wistles.
 
 # expRESTo
 
@@ -35,7 +37,6 @@ npm install
 ```bash
 npm start
 ```
-
 
 3. Configuration is loaded from `config/config.json`.
 
