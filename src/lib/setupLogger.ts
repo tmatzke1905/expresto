@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'node:path';
 import log4js from 'log4js';
 import type { AppConfig } from './config';
 import type { AppLogger } from './logger';

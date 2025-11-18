@@ -1,8 +1,6 @@
-
-
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import path from 'path';
+import path from 'node:path';
 import type { Application } from 'express';
 import { createServer } from '../../src/index';
 
@@ -46,10 +44,16 @@ describe('Ops: Prometheus extra metrics (routes/services/conflicts)', () => {
     const map = parseMetrics(res.text);
 
     const hasGetBasic = Object.keys(map).some(
-      k => k.startsWith('routes_registered_total{') && k.includes('method="get"') && k.includes('secure="basic"')
+      k =>
+        k.startsWith('routes_registered_total{') &&
+        k.includes('method="get"') &&
+        k.includes('secure="basic"')
     );
     const hasGetJwt = Object.keys(map).some(
-      k => k.startsWith('routes_registered_total{') && k.includes('method="get"') && k.includes('secure="jwt"')
+      k =>
+        k.startsWith('routes_registered_total{') &&
+        k.includes('method="get"') &&
+        k.includes('secure="jwt"')
     );
 
     expect(hasGetBasic).toBe(true);

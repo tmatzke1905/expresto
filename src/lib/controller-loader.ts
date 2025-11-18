@@ -1,6 +1,6 @@
 import { updateRouteMetrics } from './monitoring';
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import express from 'express';
 import type { ExtHandler, SecurityMode } from './types';
 import type { AppLogger } from './logger';

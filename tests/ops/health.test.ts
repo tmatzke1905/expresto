@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import path from 'path';
+import path from 'node:path';
 import type { Application } from 'express';
 import { createServer } from '../../src/index';
 

@@ -1,7 +1,7 @@
 import type { Application } from 'express';
 import request from 'supertest';
 import { describe, it, expect, beforeAll } from 'vitest';
-import path from 'path';
+import path from 'node:path';
 import { createServer } from '../src/index';
 
 describe('ControllerLoader and example endpoint', () => {

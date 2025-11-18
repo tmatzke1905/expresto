@@ -1,5 +1,5 @@
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { ValidateFunction } from 'ajv';
 import Ajv2020 from 'ajv/dist/2020';
 import addFormats from 'ajv-formats';
