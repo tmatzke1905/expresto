@@ -165,7 +165,7 @@ export async function createServer(configInput: string | AppConfig) {
       const type = String(req.params.type);
       const lines = Math.max(
         1,
-        Math.min(5000, parseInt(String(req.query.lines ?? '200'), 10) || 200)
+        Math.min(5000, Number.parseInt(String(req.query.lines ?? '200'), 10) || 200)
       );
       const filePath =
         type === 'application'

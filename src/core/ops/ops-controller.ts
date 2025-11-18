@@ -21,7 +21,7 @@ router.get('/__routes', (_req, res) => {
 
 router.get('/__logs/:type', async (req, res) => {
   const { type } = req.params;
-  const lines = parseInt(req.query.lines as string, 10);
+  const lines = Number.parseInt(req.query.lines as string, 10);
   const lineCount = Number.isFinite(lines) && lines > 0 ? lines : 50;
 
   if (!['application', 'access'].includes(type)) {
@@ -37,6 +37,5 @@ router.get('/__logs/:type', async (req, res) => {
     res.status(500).json({ error: `Could not read log: ${String(err)}` });
   }
 });
-
 
 export default router;
