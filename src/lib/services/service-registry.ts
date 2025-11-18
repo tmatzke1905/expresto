@@ -87,21 +87,12 @@ export class ServiceRegistry {
   async shutdownAll(): Promise<void> {
     for (const [name, service] of this.services.entries()) {
       try {
-        console.log(`Shutting down service: ${name}`);
-        let handled = false;
-
         if (service && typeof (service as any).shutdown === 'function') {
           await (service as any).shutdown();
-          handled = true;
         } else if (service && typeof (service as any).close === 'function') {
           await (service as any).close();
-          handled = true;
         } else {
           console.warn(`Service '${name}' does not have shutdown or close method.`);
-        }
-
-        if (handled) {
-          console.log(`Service '${name}' shut down successfully.`);
         }
       } catch (err) {
         console.error(`Error shutting down service '${name}':`, err);

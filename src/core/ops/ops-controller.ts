@@ -1,8 +1,8 @@
-import { getConfig } from '../../lib/config';
+
 import express from 'express';
 import { routeRegistry, RegisteredRoute } from '../../lib/routing/route-registry';
 import { readLogTail } from './log-reader';
-import path from 'path';
+import path from 'node:path';
 
 const router = express.Router();
 
