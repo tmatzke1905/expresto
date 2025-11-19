@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'node:fs';
 import path from 'node:path';
 import log4js from 'log4js';
 import type { AppConfig } from './config';

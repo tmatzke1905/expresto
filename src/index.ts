@@ -297,8 +297,7 @@ if (require.main === module) {
     });
 
     // Optional WebSocket support on the same HTTP server
-    const wsConfig = (config as any).websocket;
-    if (wsConfig?.enabled) {
+    if (config.websocket?.enabled) {
       const wsManager = new WebSocketManager(server!, config, logger, eventBus, services);
       services.set('websocketManager', wsManager as any);
       logger.app.info('WebSocket support enabled on shared HTTP server');

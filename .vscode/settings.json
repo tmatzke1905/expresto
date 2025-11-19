@@ -4,5 +4,9 @@
     "source.fixAll.eslint": "explicit"
   },
   "eslint.validate": ["typescript"],
-  "prettier.requireConfig": true
+  "prettier.requireConfig": true,
+  "sonarlint.connectedMode.project": {
+    "connectionId": "tmatzke1905",
+    "projectKey": "tmatzke1905_expresto"
+  }
 }

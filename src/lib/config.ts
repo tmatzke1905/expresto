@@ -51,6 +51,26 @@ export interface SchedulerConfig {
   jobs: Record<string, SchedulerJobConfig>;
 }
 
+export interface WebsocketConfig {
+  /**
+   * Enables WebSocket support on the same HTTP server.
+   */
+  enabled?: boolean;
+
+  /**
+   * Socket.IO path. Defaults to `/socket.io`.
+   */
+  path?: string;
+
+  /**
+   * Optional CORS configuration for WebSockets.
+   */
+  cors?: {
+    origin?: string | string[];
+    methods?: string[];
+  };
+}
+
 export interface AppConfig {
   port: number;
   host?: string;
@@ -68,6 +88,7 @@ export interface AppConfig {
     enabled?: boolean;
     options: Record<string, any>;
   };
+  websocket?: WebsocketConfig;
   auth?: AuthConfig;
   cluster?: { enabled?: boolean };
   metrics?: { endpoint?: string };

@@ -125,6 +125,35 @@
           }
         }
       }
+    },
+
+    "websocket": {
+      "type": "object",
+      "description": "WebSocket configuration",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "path": { "type": "string", "default": "/socket.io" },
+        "cors": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "origin": {
+              "anyOf": [
+                { "type": "string" },
+                {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              ]
+            },
+            "methods": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
     }
   }
 }
