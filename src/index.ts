@@ -75,6 +75,7 @@ export async function createServer(configInput: string | AppConfig) {
 
   // Create express app
   const app = express();
+  app.locals.eventBus = eventBus;
 
   // Attach Prometheus middleware for per-request metrics
   app.use(prometheusMiddleware());
