@@ -1,5 +1,5 @@
-import fs from 'fs';
-import readline from 'readline';
+import fs from 'node:fs';
+import readline from 'node:readline';
 
 export async function readLogTail(filePath: string, lines: number): Promise<string> {
   return new Promise((resolve, reject) => {

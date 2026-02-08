@@ -27,11 +27,9 @@ vi.mock('../../src/lib/config', () => {
   };
 });
 
-type OpsControllerModule = { default: unknown };
-
 async function createApp(): Promise<Express> {
-  const mod = (await import('../../src/core/ops/ops-controller')) as OpsControllerModule;
-  const opsController = mod.default as any;
+  const mod = await import('../../src/core/ops/ops-controller.js');
+  const opsController = mod.opsController;
 
   const app = express();
   app.use('/api', opsController); // entspricht contextRoot
@@ -105,10 +103,11 @@ describe('Ops: __logs endpoint', () => {
     expect(typeof res.text).toBe('string');
   });
 
-  it('returns 404 for unknown log type', async () => {
+  it('returns 400 for unknown log type', async () => {
     const res = await request(app).get('/api/__logs/unknown');
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error');
+    expect(res.body.error).toHaveProperty('code', 'INVALID_LOG_TYPE');
   });
 
   it('defaults to 50 lines if lines param is invalid', async () => {

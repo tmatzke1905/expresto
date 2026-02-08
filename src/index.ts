@@ -1,9 +1,8 @@
 import cors from 'cors';
 import express from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimitMiddleware from 'express-rate-limit';
 import helmet from 'helmet';
 import log4js from 'log4js';
-import * as fsp from 'node:fs/promises';
 import { AppConfig, getConfig, initConfig } from './lib/config';
 import { ControllerLoader } from './lib/controller-loader';
 import { HttpError } from './lib/errors';
@@ -19,6 +18,7 @@ import { SecurityProvider } from './lib/security';
 import { WebSocketManager } from './lib/websocket/websocket-manager';
 import { ServiceRegistry } from './lib/services/service-registry';
 import { setupLogger } from './lib/setupLogger';
+import { opsController } from './core/ops/ops-controller';
 
 let server: import('http').Server | undefined;
 
@@ -53,7 +53,7 @@ export async function createServer(configInput: string | AppConfig) {
       return users;
     };
 
-    const clone = JSON.parse(JSON.stringify(cfg));
+    const clone = structuredClone(cfg);
     if (clone.auth?.jwt?.secret) {
       clone.auth.jwt.secret = '***';
     }
@@ -76,6 +76,8 @@ export async function createServer(configInput: string | AppConfig) {
   // Create express app
   const app = express();
   app.locals.eventBus = eventBus;
+  app.locals.config = config;
+  app.locals.services = services;
 
   // Attach Prometheus middleware for per-request metrics
   app.use(prometheusMiddleware());
@@ -97,7 +99,7 @@ export async function createServer(configInput: string | AppConfig) {
   app.use(helmet(config.helmet?.options || {}));
 
   if (config.rateLimit?.enabled) {
-    app.use(rateLimit(config.rateLimit.options));
+    app.use(rateLimitMiddleware(config.rateLimit.options));
   }
 
   app.use(otelMiddleware(config, logger));
@@ -130,66 +132,8 @@ export async function createServer(configInput: string | AppConfig) {
   // Expose routes via ServiceRegistry for ops/introspection
   services.set('routes', loader.getRegisteredRoutes());
 
-  // Health endpoint
-  app.get(`${config.contextRoot}/__health`, (_req, res) => {
-    res.json({
-      status: 'ok',
-      uptime: process.uptime(),
-      services: Object.keys(services.getAll()),
-    });
-  });
-
-  // Config endpoint (masked)
-  app.get(`${config.contextRoot}/__config`, (_req, res) => {
-    res.json(maskedConfig);
-  });
-
-  // Routes introspection endpoint
-  app.get(`${config.contextRoot}/__routes`, (_req, res) => {
-    res.json(services.get('routes') || []);
-  });
-
-  // ---- Ops: read-only log endpoints helpers ----
-  async function readLastLines(filePath: string, maxLines: number): Promise<string> {
-    try {
-      const data = await fsp.readFile(filePath, 'utf8');
-      const lines = data.split(/\r?\n/);
-      const slice = lines.slice(Math.max(0, lines.length - maxLines));
-      return slice.join('\n');
-    } catch (err: any) {
-      // propagate a controlled HttpError to our error handler
-      const e: any = new HttpError(404, `log file not found: ${filePath}`);
-      e.code = 'LOG_NOT_FOUND';
-      throw e;
-    }
-  }
-
-  // Ops: read-only endpoints to fetch logs (masked by filesystem paths in config)
-  app.get(`${config.contextRoot}/__logs/:type`, async (req, res, next) => {
-    try {
-      const type = String(req.params.type);
-      const lines = Math.max(
-        1,
-        Math.min(5000, Number.parseInt(String(req.query.lines ?? '200'), 10) || 200)
-      );
-      const filePath =
-        type === 'application'
-          ? config.log.application
-          : type === 'access'
-            ? config.log.access
-            : undefined;
-      if (!filePath) {
-        const err: any = new HttpError(400, 'unknown log type');
-        err.code = 'INVALID_LOG_TYPE';
-        throw err;
-      }
-      const text = await readLastLines(filePath, lines);
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.send(text);
-    } catch (err) {
-      next(err);
-    }
-  });
+  // Mount consolidated ops endpoints under the contextRoot (e.g. /api/__health, /api/__routes, ...)
+  app.use(config.contextRoot, opsController);
 
   // Global error handler (structured JSON) — deferred so tests/consumers can attach routes first
   const errorHandler: express.ErrorRequestHandler = (err: any, req, res, _next) => {
@@ -266,7 +210,9 @@ export async function createServer(configInput: string | AppConfig) {
       await new Promise<void>(resolve => {
         try {
           (log4js as any).shutdown?.(() => resolve());
-        } catch { /* empty */ } finally {
+        } catch {
+          /* empty */
+        } finally {
           resolve();
         }
       });
@@ -296,6 +242,7 @@ export async function createServer(configInput: string | AppConfig) {
 // This check ensures the server only starts automatically
 // when this file is executed directly via `node`, and not when imported as a module.
 if (require.main === module) {
+  // sonar-ignore-next-line typescript:S7785
   (async () => {
     const { app, config, logger, eventBus, services } = await createServer(
       './middleware.config.json'
