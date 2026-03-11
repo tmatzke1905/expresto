@@ -5,7 +5,7 @@ const tsParser = require('@typescript-eslint/parser');
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
 const globals = require('globals');
 
-/** @type {import('eslint').Linter.FlatConfig[]} */
+/** @type {import('eslint').Linter.Config[]} */
 module.exports = [
   //
   // 1. Globale Ignores (entspricht .eslintrc ignorePatterns)

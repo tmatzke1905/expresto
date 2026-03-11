@@ -111,36 +111,42 @@ function nowIso(): string {
  * - Special case: `auth.basic.users` is a username->password map, therefore
  *   all values below that path are masked even though the keys are usernames.
  */
-function redact(value: unknown, path: string[] = []): unknown {
-  const p = path.join('.');
+const SECRET_KEY_PATTERN = /(secret|password|token|key)/i;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isBasicAuthUsersPath(path: string[]): boolean {
+  return path.join('.') === 'auth.basic.users';
+}
+
+function maskBasicAuthUsers(users: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.keys(users).map(user => [user, '***']));
+}
+
+function redactObject(obj: Record<string, unknown>, path: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = SECRET_KEY_PATTERN.test(k) ? (v == null ? v : '***') : redact(v, [...path, k]);
+  }
+
+  return out;
+}
+
+function redact(value: unknown, path: string[] = []): unknown {
   // Special case: basic auth user map -> always mask values
-  if (p === 'auth.basic.users' && typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    const obj = value as Record<string, unknown>;
-    const masked: Record<string, unknown> = {};
-    for (const user of Object.keys(obj)) {
-      masked[user] = '***';
-    }
-    return masked;
+  if (isBasicAuthUsersPath(path) && isRecord(value)) {
+    return maskBasicAuthUsers(value);
   }
 
   if (Array.isArray(value)) {
     return value.map((v, i) => redact(v, [...path, String(i)]));
   }
 
-  if (value && typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    const out: Record<string, unknown> = {};
-
-    for (const [k, v] of Object.entries(obj)) {
-      if (/(secret|password|token|key)/i.test(k)) {
-        out[k] = v == null ? v : '***';
-      } else {
-        out[k] = redact(v, [...path, k]);
-      }
-    }
-
-    return out;
+  if (isRecord(value)) {
+    return redactObject(value, path);
   }
 
   return value;
@@ -263,7 +269,7 @@ opsController.get('/__config', (req, res) => {
  * - expresto.ops.logs_error on read errors
  * - expresto.ops.logs_not_found when type is invalid
  */
-opsController.get('/__logs/:type', async (req, res, next) => {
+opsController.get('/__logs/:type', async (req, res) => {
   const { type } = req.params;
   const lines = Number.parseInt(req.query.lines as string, 10);
   const lineCount = Number.isFinite(lines) && lines > 0 ? lines : 50;
