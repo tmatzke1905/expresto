@@ -16,12 +16,12 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -34,6 +34,19 @@ jobs:
 
       - name: Sonar scan
         uses: SonarSource/sonarqube-scan-action@v7
+        with:
+          args: >
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.projectKey=tmatzke1905_expresto
+            -Dsonar.organization=tmatzke1905
+            -Dsonar.projectName=expresto
+            -Dsonar.sources=src
+            -Dsonar.inclusions=src/**
+            -Dsonar.exclusions=tests/**,**/tests/**,**/*.test.ts,**/*.spec.ts,dist/**,coverage/**,docs/**,node_modules/**
+            -Dsonar.test.exclusions=tests/**,**/tests/**,**/*.test.ts,**/*.spec.ts
+            -Dsonar.cpd.exclusions=tests/**,**/tests/**,**/*.test.ts,**/*.spec.ts
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.coverage.exclusions=tests/**,dist/**,docs/**
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
