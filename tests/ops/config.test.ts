@@ -1,6 +1,8 @@
 import request from 'supertest';
 import express, { type Express } from 'express';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import * as fsp from 'node:fs/promises';
+import * as path from 'node:path';
 
 // IMPORTANT: mock config BEFORE importing the ops controller.
 vi.mock('../../src/lib/config', () => {
@@ -31,7 +33,25 @@ async function createApp(): Promise<Express> {
   const mod = await import('../../src/core/ops/ops-controller.js');
   const opsController = mod.opsController;
 
+  const tmp = path.resolve(__dirname, '..', 'tmp');
+  await fsp.mkdir(tmp, { recursive: true });
+
+  const appLog = path.join(tmp, 'config.application.log');
+  const accessLog = path.join(tmp, 'config.access.log');
+
+  await fsp.writeFile(
+    appLog,
+    Array.from({ length: 60 }, (_, i) => `app line ${i + 1}`).join('\n'),
+    'utf8'
+  );
+  await fsp.writeFile(
+    accessLog,
+    Array.from({ length: 20 }, (_, i) => `access line ${i + 1}`).join('\n'),
+    'utf8'
+  );
+
   const app = express();
+  app.locals.config = { log: { application: appLog, access: accessLog } };
   app.use('/api', opsController); // entspricht contextRoot
   return app;
 }
