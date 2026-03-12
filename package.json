@@ -41,7 +41,8 @@
     "validate": "ts-node src/cli.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "sonar:scan": "npx @sonar/scan"
   },
   "author": "Thomas Matzke",
   "license": "MIT",
