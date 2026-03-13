@@ -4,11 +4,12 @@ import { loadConfig } from './lib/config';
 async function validateConfig(pathArg?: string) {
   const configPath = pathArg || './middleware.config.json';
   try {
-    const config = await loadConfig(configPath);
-    console.log(`✅ Configuration at '${configPath}' is valid.`);
+    await loadConfig(configPath);
+    process.stdout.write(`Configuration at '${configPath}' is valid.\n`);
     process.exit(0);
-  } catch (err: any) {
-    console.error(`❌ Configuration validation failed:\n${err.message}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`Configuration validation failed:\n${message}`);
     process.exit(1);
   }
 }

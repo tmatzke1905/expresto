@@ -95,7 +95,7 @@ export function updateRouteMetrics(
 // Route-Label ermitteln
 function routeLabel(req: express.Request): string {
   const base = req.baseUrl || '';
-  const route = req.route?.path || (req as any).route?.regexp || req.path || 'unknown';
+  const route = req.route?.path || req.path || 'unknown';
   const full = `${base}${typeof route === 'string' ? route : ''}`.replace(/\/+/, '/');
   return full || 'unknown';
 }

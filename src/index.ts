@@ -22,6 +22,40 @@ import { opsController } from './core/ops/ops-controller';
 
 let server: import('http').Server | undefined;
 
+type BasicAuthUsers = NonNullable<NonNullable<NonNullable<AppConfig['auth']>['basic']>['users']>;
+type Log4jsWithShutdown = typeof log4js & { shutdown?: (callback: () => void) => void };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function getErrorStatus(err: unknown): number {
+  if (err instanceof HttpError) {
+    return err.status;
+  }
+  if (isRecord(err) && typeof err.status === 'number') {
+    return err.status;
+  }
+  return 500;
+}
+
+function getErrorCode(err: unknown): string | undefined {
+  if (isRecord(err) && typeof err.code === 'string') {
+    return err.code;
+  }
+  return undefined;
+}
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  if (isRecord(err) && typeof err.message === 'string') {
+    return err.message;
+  }
+  return 'Internal Server Error';
+}
+
 /**
  * Creates and configures the expRESTo server asynchronously.
  * @param configInput Path to the middleware config JSON file or an AppConfig object.
@@ -40,15 +74,15 @@ export async function createServer(configInput: string | AppConfig) {
   const logger = setupLogger(config);
 
   // Mask sensitive config values before logging (supports both array and map forms)
-  function maskConfigForLog(cfg: AppConfig): any {
-    const maskUsers = (users: any) => {
+  function maskConfigForLog(cfg: AppConfig): AppConfig {
+    const maskUsers = (users: BasicAuthUsers | undefined): BasicAuthUsers | undefined => {
       // If array of user objects [{ username, password }]
       if (Array.isArray(users)) {
         return users.map(u => ({ ...u, password: '***' }));
       }
       // If record map { username: password }
       if (users && typeof users === 'object') {
-        return Object.fromEntries(Object.keys(users).map(u => [u, '***']));
+        return Object.fromEntries(Object.keys(users).map(u => [u, '***'])) as BasicAuthUsers;
       }
       return users;
     };
@@ -136,14 +170,15 @@ export async function createServer(configInput: string | AppConfig) {
   app.use(config.contextRoot, opsController);
 
   // Global error handler (structured JSON) — deferred so tests/consumers can attach routes first
-  const errorHandler: express.ErrorRequestHandler = (err: any, req, res, _next) => {
-    const isHttp = err instanceof HttpError || typeof (err as any)?.status === 'number';
-    const status: number = isHttp ? ((err as any).status ?? 500) : 500;
+  const errorHandler: express.ErrorRequestHandler = (err, req, res, _next) => {
+    const status = getErrorStatus(err);
+    const code = getErrorCode(err);
+    const message = getErrorMessage(err);
 
     const payload = {
       error: {
-        message: (err as any)?.message || 'Internal Server Error',
-        code: (err as any)?.code,
+        message,
+        code,
       },
       requestId: req.headers['x-request-id'],
     } as const;
@@ -154,8 +189,8 @@ export async function createServer(configInput: string | AppConfig) {
       status,
       url: req.originalUrl,
       method: req.method,
-      code: (err as any)?.code,
-      message: (err as any)?.message,
+      code,
+      message,
     }));
 
     // Backward-compatible legacy event name
@@ -209,7 +244,7 @@ export async function createServer(configInput: string | AppConfig) {
       // flush log appenders
       await new Promise<void>(resolve => {
         try {
-          (log4js as any).shutdown?.(() => resolve());
+          (log4js as Log4jsWithShutdown).shutdown?.(() => resolve());
         } catch {
           /* empty */
         } finally {
@@ -224,7 +259,7 @@ export async function createServer(configInput: string | AppConfig) {
     }
   };
 
-  const onFatal = (type: string) => (err: any) => {
+  const onFatal = (type: string) => (err: unknown) => {
     logger.app.fatal(`${type}:`, err);
     const timer = setTimeout(() => process.exit(1), SHUTDOWN_TIMEOUT_MS).unref();
     shutdown(type).finally(() => clearTimeout(timer));
@@ -261,7 +296,7 @@ if (require.main === module) {
     // Optional WebSocket support on the same HTTP server
     if (config.websocket?.enabled) {
       const wsManager = new WebSocketManager(server!, config, logger, eventBus, services);
-      services.set('websocketManager', wsManager as any);
+      services.set('websocketManager', wsManager);
       logger.app.info('WebSocket support enabled on shared HTTP server');
     }
   })();

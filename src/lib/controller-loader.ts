@@ -126,8 +126,8 @@ export class ControllerLoader {
             throw new Error('Controller must export either "init()" or "handlers[]".');
           }
 
-          app.use(path.posix.join(contextRoot, (mod as any).route), router);
-          this.logger.app.info(`Controller mounted at ${contextRoot}${(mod as any).route}`);
+          app.use(path.posix.join(contextRoot, mod.route), router);
+          this.logger.app.info(`Controller mounted at ${contextRoot}${mod.route}`);
         } catch (err) {
           this.logger.app.error(`Failed to load controller ${file}:`, err);
         }
