@@ -54,6 +54,129 @@ export class ControllerLoader {
     private security: SecurityProvider
   ) {}
 
+  private isControllerModuleFile(file: string): boolean {
+    return ['.js', '.ts'].includes(path.extname(file));
+  }
+
+  private isAdvancedController(mod: ControllerModule): mod is AdvancedController {
+    return 'init' in mod;
+  }
+
+  private isSimpleController(mod: ControllerModule): mod is SimpleController {
+    return 'handlers' in mod;
+  }
+
+  private resolveSecurityMode(mode?: SecurityMode): 'basic' | 'jwt' | 'none' {
+    if (mode === 'basic') {
+      return 'basic';
+    }
+    if (mode === 'jwt' || mode === true) {
+      return 'jwt';
+    }
+    return 'none';
+  }
+
+  private registerSimpleRoute(
+    router: express.Router,
+    contextRoot: string,
+    controllerRoute: string,
+    file: string,
+    handler: RouteHandler
+  ): void {
+    const method = handler.method.toLowerCase() as HttpMethod;
+    const fullPath = path.posix.join(contextRoot, controllerRoute, handler.path);
+    const secure = this.resolveSecurityMode(handler.secure);
+    const args: ExtHandler[] = [...(handler.middlewares ?? [])];
+    const meta: RouteSecurityMeta = {
+      mode: secure,
+      controller: file,
+      fullPath,
+      handlerPath: handler.path,
+      method,
+    };
+
+    args.push(this.security.createMiddleware(meta), handler.handler);
+    router[method](handler.path, ...args);
+
+    this.registered.push({
+      method,
+      path: handler.path,
+      fullPath,
+      secure,
+      controller: file,
+    });
+
+    this.routeRegistry.register({
+      method,
+      path: fullPath,
+      secure,
+      source: file,
+    });
+  }
+
+  private async initializeController(
+    mod: ControllerModule,
+    router: express.Router,
+    contextRoot: string,
+    file: string
+  ): Promise<void> {
+    if (this.isAdvancedController(mod)) {
+      await mod.init(router, this.logger, this.security);
+      return;
+    }
+
+    if (this.isSimpleController(mod)) {
+      for (const handler of mod.handlers) {
+        this.registerSimpleRoute(router, contextRoot, mod.route, file, handler);
+      }
+      return;
+    }
+
+    throw new Error('Controller must export either "init()" or "handlers[]".');
+  }
+
+  private async loadControllerModule(
+    app: express.Application,
+    contextRoot: string,
+    fullPath: string,
+    file: string
+  ): Promise<void> {
+    const controllerFile = path.join(fullPath, file);
+    this.logger.app.debug(`Loading controller: ${file}`);
+
+    try {
+      const mod = (await import(controllerFile)).default as ControllerModule;
+      const router = express.Router();
+
+      await this.initializeController(mod, router, contextRoot, file);
+
+      app.use(path.posix.join(contextRoot, mod.route), router);
+      this.logger.app.info(`Controller mounted at ${contextRoot}${mod.route}`);
+    } catch (err) {
+      this.logger.app.error(`Failed to load controller ${file}:`, err);
+    }
+  }
+
+  private finalizeRouteRegistration(): void {
+    const conflicts = this.routeRegistry.detectConflicts();
+    for (const msg of conflicts) {
+      this.logger.app.warn(`[RouteRegistry] ${msg}`);
+    }
+
+    const routeInfos = this.routeRegistry.getRoutes().map(route => ({
+      method: route.method,
+      secure: route.secure,
+    }));
+    updateRouteMetrics(routeInfos, conflicts.length);
+
+    if (this.logger.app.isDebugEnabled()) {
+      this.logger.app.debug('[RouteRegistry] Registered Routes:');
+      for (const route of this.routeRegistry.getSorted()) {
+        this.logger.app.debug(`  [${route.method.toUpperCase()}] ${route.path} (${route.secure})`);
+      }
+    }
+  }
+
   async load(app: express.Application, contextRoot: string): Promise<void> {
     const fullPath = path.resolve(this.controllerPath);
 
@@ -61,100 +184,14 @@ export class ControllerLoader {
       const files = await fs.readdir(fullPath);
 
       for (const file of files) {
-        const ext = path.extname(file);
-        if (!['.js', '.ts'].includes(ext)) continue;
-
-        const controllerFile = path.join(fullPath, file);
-        this.logger.app.debug(`Loading controller: ${file}`);
-
-        try {
-          const mod = (await import(controllerFile)).default as ControllerModule;
-          const router = express.Router();
-
-          if ('init' in mod) {
-            await mod.init(router, this.logger, this.security);
-          } else if ('handlers' in mod) {
-            for (const h of mod.handlers) {
-              const method = h.method.toLowerCase() as HttpMethod;
-              const args: ExtHandler[] = [];
-
-              if (h.middlewares) args.push(...h.middlewares);
-
-              // Security-Mode auflösen -> 'basic' | 'jwt' | 'none'
-              const secMode: 'basic' | 'jwt' | 'none' =
-                h.secure === 'basic'
-                  ? 'basic'
-                  : h.secure === 'jwt' || h.secure === true
-                    ? 'jwt'
-                    : 'none';
-
-              const full = path.posix.join(contextRoot, mod.route, h.path);
-
-              const meta: RouteSecurityMeta = {
-                mode: secMode,
-                controller: file,
-                fullPath: full,
-                handlerPath: h.path,
-                method,
-              };
-
-              // Security-Middleware mit Route-Metadaten einhängen
-              args.push(this.security.createMiddleware(meta));
-
-              // Handler registrieren
-              args.push(h.handler);
-              router[method](h.path, ...args);
-
-              // Für Ops-Endpunkt
-              this.registered.push({
-                method,
-                path: h.path,
-                fullPath: full,
-                secure: secMode,
-                controller: file,
-              });
-
-              // Für Konflikt-Check & Metriken
-              this.routeRegistry.register({
-                method,
-                path: full,
-                secure: secMode,
-                source: file,
-              });
-            }
-          } else {
-            throw new Error('Controller must export either "init()" or "handlers[]".');
-          }
-
-          app.use(path.posix.join(contextRoot, mod.route), router);
-          this.logger.app.info(`Controller mounted at ${contextRoot}${mod.route}`);
-        } catch (err) {
-          this.logger.app.error(`Failed to load controller ${file}:`, err);
+        if (!this.isControllerModuleFile(file)) {
+          continue;
         }
+
+        await this.loadControllerModule(app, contextRoot, fullPath, file);
       }
 
-      // Konflikte melden
-      const conflicts = this.routeRegistry.detectConflicts();
-      for (const msg of conflicts) {
-        this.logger.app.warn(`[RouteRegistry] ${msg}`);
-      }
-
-      // Metriken aktualisieren (Aggregat nach method/secure)
-      const allRoutes = this.routeRegistry.getRoutes();
-      const routeInfos = allRoutes.map(r => ({
-        method: r.method,
-        secure: r.secure,
-      }));
-      updateRouteMetrics(routeInfos, conflicts.length);
-
-      // Optional: Liste ausgeben
-      if (this.logger.app.isDebugEnabled()) {
-        const sorted = this.routeRegistry.getSorted();
-        this.logger.app.debug('[RouteRegistry] Registered Routes:');
-        for (const r of sorted) {
-          this.logger.app.debug(`  [${r.method.toUpperCase()}] ${r.path} (${r.secure})`);
-        }
-      }
+      this.finalizeRouteRegistration();
     } catch (err) {
       this.logger.app.error('Failed to read controller directory:', err);
       throw err;

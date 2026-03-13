@@ -107,6 +107,34 @@ export class SecurityProvider {
     this.eventBus?.emit(event, createEventPayload('security-provider', context));
   }
 
+  private async runSecurityHooks(req: Request): Promise<void> {
+    if (!this.hooks || !this.services) {
+      return;
+    }
+
+    await this.hooks.emit(LifecycleHook.SECURITY, {
+      config: this.config,
+      logger: this.logger,
+      services: this.services,
+      eventBus: this.eventBus,
+      request: req,
+    });
+  }
+
+  private async authorizeRequest(
+    req: Request,
+    res: Response,
+    meta: RouteSecurityMeta
+  ): Promise<void> {
+    if (meta.mode === 'basic') {
+      await this.handleBasic(req, res);
+    } else if (meta.mode === 'jwt') {
+      await this.handleJwt(req);
+    }
+
+    await this.runSecurityHooks(req);
+  }
+
   private async handleRequest(
     req: Request,
     res: Response,
@@ -126,35 +154,8 @@ export class SecurityProvider {
     };
 
     try {
-      // Offene Route: keine Authentisierung, aber SECURITY-Hooks können trotzdem lauschen
-      if (meta.mode === 'none') {
-        if (this.hooks && this.services) {
-          await this.hooks.emit(LifecycleHook.SECURITY, {
-            config: this.config,
-            logger: this.logger,
-            services: this.services,
-            eventBus: this.eventBus,
-            request: req,
-          });
-        }
-      } else {
-        if (meta.mode === 'basic') {
-          await this.handleBasic(req, res);
-        } else if (meta.mode === 'jwt') {
-          await this.handleJwt(req);
-        }
-
-        // Nach erfolgreicher Authentisierung: projektspezifische Checks via SECURITY-Hook
-        if (this.hooks && this.services) {
-          await this.hooks.emit(LifecycleHook.SECURITY, {
-            config: this.config,
-            logger: this.logger,
-            services: this.services,
-            eventBus: this.eventBus,
-            request: req,
-          });
-        }
-      }
+      // Offene Routen und authentisierte Routen laufen beide durch denselben SECURITY-Hook.
+      await this.authorizeRequest(req, res, meta);
 
       this.emitSecurityEvent('expresto.security.authorize', {
         ...reqMeta,

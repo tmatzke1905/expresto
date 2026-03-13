@@ -1,8 +1,9 @@
 import type { Request, Response, RequestHandler, NextFunction } from 'express';
+import type { ParamsDictionary } from 'express-serve-static-core';
 import type { ParsedQs } from 'qs';
 
 export type ExtRequest<
-  Params extends Record<string, unknown> = Record<string, unknown>,
+  Params extends ParamsDictionary = ParamsDictionary,
   ResBody = unknown,
   ReqBody = unknown,
   ReqQuery = ParsedQs,
@@ -15,7 +16,7 @@ export type ExtResponse<
 > = Response<ResBody, Locals>;
 
 export type ExtHandler<
-  Params extends Record<string, unknown> = Record<string, unknown>,
+  Params extends ParamsDictionary = ParamsDictionary,
   ResBody = unknown,
   ReqBody = unknown,
   ReqQuery = ParsedQs,
