@@ -181,7 +181,7 @@ export class SchedulerService {
           /* no-op */
         },
         addCallback: () => {},
-      } as any,
+      } as ScheduledTask,
       running: false,
       module: {
         id: name,

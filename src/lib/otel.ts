@@ -18,7 +18,7 @@ export function otelMiddleware(config: AppConfig, logger: AppLogger): RequestHan
   const tracer = __tracerOverride || trace.getTracer('expresto', '1.0.0');
 
   return (req, res, next) => {
-    const route = (req as any).route?.path || req.path || 'unknown';
+    const route = req.route?.path || req.path || 'unknown';
     const spanName = `expresto.http_request ${req.method} ${route}`;
 
     tracer.startActiveSpan(spanName, span => {
@@ -56,14 +56,14 @@ export function otelMiddleware(config: AppConfig, logger: AppLogger): RequestHan
         res.on('close', onClose);
 
         next();
-      } catch (err) {
+      } catch (err: unknown) {
         try {
           span.setStatus({ code: SpanStatusCode.ERROR });
           span.end();
         } catch {
           /* empty */
         }
-        logger.app.warn('otelMiddleware error', err as any);
+        logger.app.warn('otelMiddleware error', err instanceof Error ? err : new Error(String(err)));
         next();
       }
     });

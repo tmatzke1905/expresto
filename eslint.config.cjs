@@ -1,9 +1,7 @@
 // eslint.config.cjs - minimal flat config for expresto
 
-const js = require('@eslint/js');
 const tsParser = require('@typescript-eslint/parser');
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
-const globals = require('globals');
 
 /** @type {import('eslint').Linter.Config[]} */
 module.exports = [
@@ -23,20 +21,11 @@ module.exports = [
       ecmaVersion: 2020,
       sourceType: 'module',
       parser: tsParser,
-      globals: {
-        ...globals.node,
-        ...globals.es2020,
-      },
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
     },
     rules: {
-      //
-      // Basis ESLint-Regeln
-      //
-      ...js.configs.recommended.rules,
-
       //
       // TS-Plugin recommended
       //
@@ -48,7 +37,13 @@ module.exports = [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
 
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn'],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
 
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',

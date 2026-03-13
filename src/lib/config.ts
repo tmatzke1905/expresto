@@ -31,7 +31,7 @@ export interface AuthConfig {
   };
   basic?: {
     enabled?: boolean;
-    users?: Record<string, string>;
+    users?: Record<string, string> | Array<{ username: string; password: string }>;
   };
 }
 
@@ -82,11 +82,11 @@ export interface AppConfig {
     level: string;
     traceRequests?: boolean;
   };
-  cors?: { enabled?: boolean; options?: Record<string, any> };
-  helmet?: { enabled?: boolean; options?: Record<string, any> };
+  cors?: { enabled?: boolean; options?: Record<string, unknown> };
+  helmet?: { enabled?: boolean; options?: Record<string, unknown> };
   rateLimit?: {
     enabled?: boolean;
-    options: Record<string, any>;
+    options: Record<string, unknown>;
   };
   websocket?: WebsocketConfig;
   auth?: AuthConfig;

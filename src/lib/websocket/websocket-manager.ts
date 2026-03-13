@@ -53,8 +53,7 @@ export class WebSocketManager {
       path: this.wsConfig.path ?? '/socket.io',
       // Socket.IO CORS options are more flexible than our config type.
       // We intentionally keep this loosely typed here.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      cors: this.wsConfig.cors as any,
+      cors: this.wsConfig.cors,
     });
 
     const auth = config.auth;
@@ -100,8 +99,7 @@ export class WebSocketManager {
         const payload = await verifyToken(token, this.jwtSecret, this.jwtAlgorithm);
         // Attach auth payload to the socket context so handlers can use it
         // without re-validating the token.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const s = socket as any;
+        const s = this.socketState(socket);
         s.data = s.data || {};
         s.data.auth = payload;
         this.attachSocketContext(socket, {
@@ -131,8 +129,7 @@ export class WebSocketManager {
       this.logger.app.info(`WebSocket client connected: ${socket.id}`);
 
       // Keep payloads small and stable for consumers.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const s = socket as any;
+      const s = this.socketState(socket);
       const socketContext = s.data?.context ?? s.context;
       this.eventBus.emit(
         'expresto.websocket.connected',
@@ -194,12 +191,29 @@ export class WebSocketManager {
   }
 
   private attachSocketContext(socket: Socket, context: { user?: unknown; token?: string; requestId?: string }): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const s = socket as any;
+    const s = this.socketState(socket);
     s.data = s.data || {};
     s.data.context = context;
     // Expose the same context on `socket.context` for framework conventions.
     s.context = context;
+  }
+
+  private socketState(
+    socket: Socket
+  ): Socket & {
+    data: Record<string, unknown> & {
+      auth?: unknown;
+      context?: { user?: unknown; token?: string; requestId?: string };
+    };
+    context?: { user?: unknown; token?: string; requestId?: string };
+  } {
+    return socket as Socket & {
+      data: Record<string, unknown> & {
+        auth?: unknown;
+        context?: { user?: unknown; token?: string; requestId?: string };
+      };
+      context?: { user?: unknown; token?: string; requestId?: string };
+    };
   }
 
   /**
