@@ -12,6 +12,7 @@ Execution rule for release work:
 - Keep code changes, tests, and documentation updates in the same branch.
 - Merge only after the listed verification steps are green.
 - If scope needs to be reduced, update README and `docs/` in the same package.
+- Always generate a commit message
 
 ### Package 1 — Packaging and Publishability
 
