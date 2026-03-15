@@ -8,6 +8,7 @@ import { LifecycleHook } from '../hooks';
 import type { ServiceRegistry } from '../services/service-registry';
 import { createEventPayload, type EventBus } from '../events';
 import { verifyToken, type SupportedHmacAlg } from './jwt';
+import { assertBasicAuthConfigured, assertJwtAuthConfigured, isBasicEnabled, isJwtEnabled } from './runtime-config';
 import { HttpError } from '../errors';
 
 export type RouteSecurityMeta = {
@@ -55,15 +56,21 @@ export class SecurityProvider {
     const auth = config.auth;
 
     // JWT settings (from config.auth.jwt)
-    this.jwtEnabled = auth?.jwt?.enabled ?? true;
-    this.jwtSecret = auth?.jwt?.secret || 'default_secret';
+    this.jwtEnabled = isJwtEnabled(config);
+    if (this.jwtEnabled) {
+      assertJwtAuthConfigured(config, 'JWT authentication');
+    }
+    this.jwtSecret = auth?.jwt?.secret?.trim() ?? '';
     const alg = (auth?.jwt?.algorithm || 'HS512') as string;
     this.jwtAlgorithm = ['HS256', 'HS384', 'HS512'].includes(alg.toUpperCase())
       ? (alg.toUpperCase() as SupportedHmacAlg)
       : 'HS512';
 
     // Basic settings (from config.auth.basic)
-    this.basicEnabled = !!auth?.basic?.enabled;
+    this.basicEnabled = isBasicEnabled(config);
+    if (this.basicEnabled) {
+      assertBasicAuthConfigured(config, 'Basic authentication');
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.basicUsers = (auth as any)?.basic?.users;
   }
@@ -176,7 +183,8 @@ export class SecurityProvider {
 
   private async handleJwt(req: Request): Promise<void> {
     if (!this.jwtEnabled) {
-      return;
+      this.logger.app.error('JWT: Route requires JWT auth, but auth.jwt.enabled is false');
+      throw new HttpError(503, 'JWT authentication is not configured');
     }
 
     const authHeader = req.headers['authorization'];
@@ -202,7 +210,8 @@ export class SecurityProvider {
 
   private async handleBasic(req: Request, res: Response): Promise<void> {
     if (!this.basicEnabled) {
-      return;
+      this.logger.app.error('BasicAuth: Route requires Basic Auth, but auth.basic.enabled is false');
+      throw new HttpError(503, 'Basic authentication is not configured');
     }
 
     const header = req.headers['authorization'];

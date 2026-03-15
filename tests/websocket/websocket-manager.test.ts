@@ -74,6 +74,35 @@ describe('WebSocketManager', () => {
     expect(manager.io.opts.cors.origin).toBe('*');
   });
 
+  it('throws when websocket auth is enabled without JWT support', () => {
+    config = createConfig({
+      auth: {
+        jwt: {
+          enabled: false,
+        },
+      },
+    });
+
+    expect(() => new WebSocketManager(server, config, logger, eventBus, services)).toThrow(
+      'WebSocket authentication requires auth.jwt.enabled=true.'
+    );
+  });
+
+  it('throws when websocket auth uses a placeholder JWT secret', () => {
+    config = createConfig({
+      auth: {
+        jwt: {
+          enabled: true,
+          secret: 'change-me',
+        },
+      },
+    });
+
+    expect(() => new WebSocketManager(server, config, logger, eventBus, services)).toThrow(
+      'WebSocket authentication requires auth.jwt.secret to not use a default placeholder value.'
+    );
+  });
+
   // ------------------------------------------------------------------
   // 2. extractTokenFromHandshake
   // ------------------------------------------------------------------

@@ -4,6 +4,7 @@ import type { AppConfig, WebsocketConfig } from '../config';
 import type { AppLogger } from '../logger';
 import { createEventPayload, EventBus } from '../events';
 import { verifyToken, type SupportedHmacAlg } from '../security/jwt';
+import { assertJwtAuthConfigured } from '../security/runtime-config';
 import type { ServiceRegistry } from '../services/service-registry';
 
 /**
@@ -49,6 +50,8 @@ export class WebSocketManager {
     this.eventBus = eventBus;
     this.wsConfig = config.websocket ?? {};
 
+    assertJwtAuthConfigured(config, 'WebSocket authentication');
+
     this.io = new IOServer(server, {
       path: this.wsConfig.path ?? '/socket.io',
       // Socket.IO CORS options are more flexible than our config type.
@@ -57,8 +60,8 @@ export class WebSocketManager {
     });
 
     const auth = config.auth;
-    this.jwtEnabled = auth?.jwt?.enabled ?? true;
-    this.jwtSecret = auth?.jwt?.secret ?? 'change-me';
+    this.jwtEnabled = auth?.jwt?.enabled === true;
+    this.jwtSecret = auth?.jwt?.secret?.trim() ?? '';
     this.jwtAlgorithm = (auth?.jwt?.algorithm ?? 'HS256') as SupportedHmacAlg;
 
     this.setup();
@@ -74,12 +77,16 @@ export class WebSocketManager {
       const requestId = this.extractRequestIdFromHandshake(socket);
 
       if (!this.jwtEnabled) {
-        this.attachSocketContext(socket, {
-          token,
-          requestId,
-          user: undefined,
-        });
-        return next();
+        this.logger.app.error('WebSocket connection rejected: JWT auth is disabled');
+        this.eventBus.emit(
+          'expresto.websocket.error',
+          createEventPayload('websocket-manager', {
+            stage: 'handshake',
+            reason: 'jwt_not_configured',
+            requestId,
+          })
+        );
+        return next(new Error('WebSocket authentication is not configured'));
       }
 
       if (!token) {

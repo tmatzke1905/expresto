@@ -49,25 +49,25 @@ Goal: Make all protected paths fail closed and remove insecure defaults.
 
 Checklist:
 
-- [ ] Make Node 22 the minimal Node environment. GitHub Action should run on Node 22
-- [ ] Make `secure: 'jwt'` reject requests when JWT is disabled or not
+- [x] Make Node 22 the minimal Node environment. GitHub Action should run on Node 22
+- [x] Make `secure: 'jwt'` reject requests when JWT is disabled or not
       configured.
-- [ ] Make `secure: 'basic'` reject requests when Basic Auth is disabled or not
+- [x] Make `secure: 'basic'` reject requests when Basic Auth is disabled or not
       configured.
-- [ ] Remove default JWT secrets and fail startup on insecure auth
+- [x] Remove default JWT secrets and fail startup on insecure auth
       configuration.
-- [ ] Apply the same hardening rules to WebSocket authentication.
-- [ ] Decide how ops endpoints are protected in production
+- [x] Apply the same hardening rules to WebSocket authentication.
+- [x] Decide how ops endpoints are protected in production
       (disabled-by-config, auth-protected, or both).
-- [ ] Add regression tests for negative auth paths and insecure config startup
+- [x] Add regression tests for negative auth paths and insecure config startup
       failures.
-- [ ] Update `docs/security.md`, `docs/websocket.md`, and relevant config docs.
+- [x] Update `docs/security.md`, `docs/websocket.md`, and relevant config docs.
 
 Verification:
 
-- [ ] `npm test -- --run`
-- [ ] Security regression tests added and passing
-- [ ] Security docs updated
+- [x] `npm test -- --run`
+- [x] Security regression tests added and passing
+- [x] Security docs updated
 
 ### Package 3 — Runtime Wiring and Config Contract
 

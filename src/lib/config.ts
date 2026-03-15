@@ -66,6 +66,11 @@ export interface WebsocketConfig {
   };
 }
 
+export interface OpsConfig {
+  enabled?: boolean;
+  secure?: 'none' | 'basic' | 'jwt';
+}
+
 export interface AppConfig {
   port: number;
   host?: string;
@@ -87,6 +92,7 @@ export interface AppConfig {
   auth?: AuthConfig;
   cluster?: { enabled?: boolean };
   metrics?: { endpoint?: string };
+  ops?: OpsConfig;
   telemetry?: {
     /** enable/disable OpenTelemetry HTTP span creation (default: false) */
     enabled?: boolean;
