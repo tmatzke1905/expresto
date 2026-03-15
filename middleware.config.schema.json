@@ -90,6 +90,15 @@
       "properties": { "endpoint": { "type": "string" } }
     },
 
+    "ops": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "secure": { "type": "string", "enum": ["none", "basic", "jwt"] }
+      }
+    },
+
     "telemetry": {
       "type": "object",
       "additionalProperties": false,

@@ -15,6 +15,7 @@ import {
 } from './lib/monitoring';
 import { otelMiddleware } from './lib/otel';
 import { SecurityProvider } from './lib/security';
+import { areOpsEnabled, getOpsSecurityMode, validateRuntimeSecurityConfig } from './lib/security/runtime-config';
 import { WebSocketManager } from './lib/websocket/websocket-manager';
 import { ServiceRegistry } from './lib/services/service-registry';
 import { setupLogger } from './lib/setupLogger';
@@ -69,6 +70,8 @@ export async function createServer(configInput: string | AppConfig) {
   } else {
     config = configInput;
   }
+
+  validateRuntimeSecurityConfig(config);
 
   // Initialize logger, hooks, events, services
   const logger = setupLogger(config);
@@ -167,7 +170,24 @@ export async function createServer(configInput: string | AppConfig) {
   services.set('routes', loader.getRegisteredRoutes());
 
   // Mount consolidated ops endpoints under the contextRoot (e.g. /api/__health, /api/__routes, ...)
-  app.use(config.contextRoot, opsController);
+  if (areOpsEnabled(config)) {
+    const opsSecurityMode = getOpsSecurityMode(config);
+    if (opsSecurityMode === 'none') {
+      app.use(config.contextRoot, opsController);
+    } else {
+      app.use(
+        config.contextRoot,
+        security.createMiddleware({
+          mode: opsSecurityMode,
+          controller: '__ops',
+          fullPath: `${config.contextRoot}/__ops`,
+          handlerPath: '__ops',
+          method: 'ALL',
+        }),
+        opsController
+      );
+    }
+  }
 
   // Global error handler (structured JSON) — deferred so tests/consumers can attach routes first
   const errorHandler: express.ErrorRequestHandler = (err, req, res, _next) => {

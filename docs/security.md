@@ -1,98 +1,132 @@
-
-
 # Security
 
-expRESTo provides built-in support for route-level security using:
+expRESTo supports route-level authentication via:
 
-- JSON Web Tokens (JWT)
+- JWT bearer tokens
 - HTTP Basic Authentication
-- Custom Security Providers
+- shared security hooks for project-specific authorization
+
+Protected routes fail closed. A route declared with `secure: 'jwt'` or
+`secure: 'basic'` is never treated as public just because the corresponding
+auth provider is disabled or missing.
 
 ---
 
 ## Configuration
 
-Security is configured globally in the main config file, with options for:
+Authentication is configured under `auth` in the main config file.
 
-- Algorithm (e.g. HS256)
-- Secret or key
-- Token lifetime
-- Optional custom provider
+```json
+{
+  "auth": {
+    "jwt": {
+      "enabled": true,
+      "secret": "replace-with-a-real-secret",
+      "algorithm": "HS256",
+      "expiresIn": "1h"
+    },
+    "basic": {
+      "enabled": true,
+      "users": {
+        "alice": "password123"
+      }
+    }
+  }
+}
+```
+
+Rules enforced at startup:
+
+- `auth.jwt.enabled: true` requires a non-empty `auth.jwt.secret`
+- placeholder JWT secrets such as `default_secret` and `change-me` are rejected
+- `auth.basic.enabled: true` requires at least one configured Basic Auth user
+
+If these checks fail, server startup is aborted.
 
 ---
 
 ## Supported Modes
 
-| Mode     | Description                             |
-|----------|-----------------------------------------|
-| `none`   | No authentication required              |
-| `basic`  | HTTP Basic Auth (username + password)   |
-| `jwt`    | JSON Web Token via `Authorization: Bearer` header |
+| Mode    | Behavior |
+|---------|----------|
+| `none`  | Public route, no authentication required |
+| `basic` | Requires valid HTTP Basic credentials |
+| `jwt`   | Requires a valid `Authorization: Bearer <token>` header |
 
-You can define the required mode per route in your controller or using route metadata.
-
----
-
-## JWT Support
-
-JWT tokens are:
-
-- Verified using `jose` (not `jsonwebtoken`)
-- Parsed and validated by the built-in `JwtSecurityProvider`
-- Automatically injected into `req.auth` if valid
-
----
-
-## Basic Auth
-
-Basic authentication is available out-of-the-box for simple use cases.
-
-- Requires user/password to be provided
-- Matching logic can be customized
-
----
-
-## SecurityProvider
-
-You can override the default behavior by providing a custom `SecurityProvider`.
-
-A custom provider must implement:
+Example controller metadata:
 
 ```ts
-interface SecurityProvider {
-  check(req: Request, mode: 'jwt' | 'basic' | 'none'): Promise<void>;
+export default {
+  route: '/secure',
+  handlers: [
+    {
+      method: 'get',
+      path: '/jwt',
+      secure: 'jwt',
+      handler: (_req, res) => {
+        res.json({ ok: true });
+      },
+    },
+  ],
+};
+```
+
+---
+
+## Fail-Closed Behavior
+
+Protected routes are rejected when the required auth mode is unavailable:
+
+- `secure: 'jwt'` returns `503` when JWT auth is disabled
+- `secure: 'basic'` returns `503` when Basic Auth is disabled
+- missing or malformed credentials still return `401`
+- invalid JWTs return `403`
+
+On successful authentication, the framework attaches:
+
+- `req.auth`
+- `req.user`
+
+This keeps existing middleware and controller conventions working.
+
+---
+
+## Security Hooks and Events
+
+After authentication succeeds, expRESTo runs the `LifecycleHook.SECURITY`
+pipeline so applications can apply additional authorization checks.
+
+The framework emits:
+
+- `expresto.security.authorize`
+
+Payloads include the route mode, path, method, and whether access was allowed
+or denied.
+
+---
+
+## Ops Endpoints in Production
+
+Ops endpoints are intentionally treated as sensitive in production.
+
+When `NODE_ENV=production`, startup fails unless you choose one of these
+options:
+
+- disable ops endpoints with `ops.enabled: false`
+- protect ops endpoints with `ops.secure: 'basic'`
+- protect ops endpoints with `ops.secure: 'jwt'`
+
+Example:
+
+```json
+{
+  "ops": {
+    "enabled": true,
+    "secure": "basic"
+  }
 }
 ```
 
-This allows you to:
-
-- Integrate external identity providers
-- Add role-based access checks
-- Log or audit access attempts
-
 ---
 
-## Route Enforcement
-
-All security checks are performed **before** the route handler is executed.
-
-If authentication fails:
-
-- A `401 Unauthorized` or `403 Forbidden` is returned
-- A log entry is written to `application.log`
-
----
-
-## Public Routes
-
-You can explicitly mark routes as `secure: 'none'` to bypass security.
-
-Examples include:
-
-- Health checks
-- Static asset endpoints
-- Log file access
-
----
-
-_Last updated: 2025-09-14_
+_Last updated: 2026-03-15_

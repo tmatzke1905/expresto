@@ -1,81 +1,92 @@
 # WebSocket Support
 
-expRESTo can optionally enable WebSocket communication via [Socket.IO](https://socket.io/).
+expRESTo can attach Socket.IO to the same HTTP server as the Express runtime.
 
 ---
 
-## Enabling WebSocket
+## Enabling WebSockets
 
-WebSocket support must be explicitly enabled in the configuration:
+WebSocket support must be enabled explicitly:
 
 ```json
-"websocket": {
-  "enabled": true
+{
+  "websocket": {
+    "enabled": true,
+    "path": "/socket.io"
+  }
 }
 ```
 
-Once enabled, a shared `http.Server` instance is used by both Express and Socket.IO.
+WebSocket authentication uses the same JWT configuration as HTTP routes.
 
----
+Required configuration:
 
-## Usage
-
-To use WebSocket in your controller or module:
-
-```ts
-import { getSocketServer } from '../lib/websocket';
-
-const io = getSocketServer();
-
-io.on('connection', (socket) => {
-  console.log('WebSocket client connected');
-
-  socket.on('ping', () => {
-    socket.emit('pong');
-  });
-});
+```json
+{
+  "auth": {
+    "jwt": {
+      "enabled": true,
+      "secret": "replace-with-a-real-secret",
+      "algorithm": "HS256"
+    }
+  }
+}
 ```
 
-The same `io` instance is available anywhere after the POST_INIT lifecycle point.
+If WebSockets are enabled without secure JWT configuration, startup fails.
 
 ---
 
-## Integration Details
+## Authentication Sources
 
-- Socket.IO runs on the same port as Express
-- There is no need to open an additional port
-- CORS and transport configuration can be customized later
+The WebSocket handshake checks for a token in this order:
+
+1. `socket.handshake.auth.token`
+2. `socket.handshake.query.token`
+3. `Authorization: Bearer <token>` header
+
+If no token is present, the connection is rejected. Invalid tokens are also
+rejected.
+
+---
+
+## Socket Context
+
+After successful authentication, the manager attaches normalized context data:
+
+- `socket.context.user`
+- `socket.context.token`
+- `socket.context.requestId`
+
+The same object is also available as `socket.data.context`.
+
+The verified JWT payload is stored in `socket.data.auth`.
+
+---
 
 ## EventBus Integration
 
-The framework emits the following WebSocket events:
+The framework emits:
 
 - `expresto.websocket.connected`
 - `expresto.websocket.disconnected`
 - `expresto.websocket.error`
 - `expresto.websocket.message`
 
-All follow the standard event payload (`ts`, `source`, `context`) plus
-event-specific fields.
+Handshake failures emit `expresto.websocket.error` with a reason such as:
 
-## Handshake Context
-
-After successful auth, the manager attaches a normalized context:
-
-- `socket.context.user`
-- `socket.context.token`
-- `socket.context.requestId`
-
-The same object is also available via `socket.data.context`.
+- `missing_token`
+- `invalid_token`
+- `jwt_not_configured`
 
 ---
 
-## Tips
+## Runtime Notes
 
-- Use rooms or namespaces for channel separation
-- Log all incoming events during development
-- Avoid sending sensitive data over unencrypted connections
+- Socket.IO runs on the shared HTTP server
+- no extra backend port is opened
+- TLS termination is expected to happen at the reverse proxy
 
 ---
 
-_Last updated: 2026-03-12_
+_Last updated: 2026-03-15_
