@@ -90,6 +90,7 @@ See [Public API](./docs/public-api.md) for the exact supported surface.
 
 - [Public API](./docs/public-api.md)
 - [Releases](./docs/releases.md)
+- [Release Notes](./docs/release-notes/1.0.0-beta.md)
 - [Configuration](./docs/configuration.md)
 - [Controllers](./docs/controllers.md)
 - [Security](./docs/security.md)

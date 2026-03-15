@@ -100,9 +100,12 @@ Hooks allow extensions at different lifecycle phases:
 
 ```
 INITIALIZE
-BEFORE_STARTUP
-AFTER_STARTUP
-BEFORE_SHUTDOWN
+STARTUP
+PRE_INIT
+CUSTOM_MIDDLEWARE
+POST_INIT
+SHUTDOWN
+SECURITY
 ```
 
 Hooks operate at the **framework lifecycle level**, not just the HTTP layer.
@@ -185,6 +188,10 @@ ServiceRegistry
 ```
 
 Plugins simply receive the runtime context and compose these primitives.
+
+For the first supported release, the plugin system remains roadmap-only.
+The current v1 surface exposes the primitives above, but not a stable plugin
+loader or plugin configuration contract.
 
 Example:
 
@@ -379,7 +386,6 @@ These decisions define the core philosophy of the Expresto framework:
 event-driven architecture
 hook-based extensibility
 service-oriented infrastructure
-minimal plugin system
 built-in observability
 ```
 

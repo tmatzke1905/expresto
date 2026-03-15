@@ -129,22 +129,22 @@ Goal: Close the release with a reproducible verification pass.
 
 Checklist:
 
-- [ ] Add end-to-end smoke checks for package import, secure route behavior, ops
+- [x] Add end-to-end smoke checks for package import, secure route behavior, ops
       endpoint policy, and scheduler startup.
-- [ ] Run the full validation suite: build, tests, and coverage.
-- [ ] Review open roadmap items and explicitly move non-v1 work into later
+- [x] Run the full validation suite: build, tests, and coverage.
+- [x] Review open roadmap items and explicitly move non-v1 work into later
       feature releases.
-- [ ] Prepare concise release notes for the first supported release.
-- [ ] If architectural behavior changed materially, add/update ADR entries in
+- [x] Prepare concise release notes for the first supported release.
+- [x] If architectural behavior changed materially, add/update ADR entries in
       `docs/design-decisions.md`.
 
 Verification:
 
-- [ ] `npm run build`
-- [ ] `npm test -- --run`
-- [ ] `npm run coverage`
-- [ ] Release notes drafted
-- [ ] ADRs/doc updates completed where needed
+- [x] `npm run build`
+- [x] `npm test -- --run`
+- [x] `npm run coverage`
+- [x] Release notes drafted
+- [x] ADRs/doc updates completed where needed
 
 ## Deferred Feature Packages (Post-v1)
 

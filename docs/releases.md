@@ -27,6 +27,10 @@ Status: planned first public prerelease
 Goal: publish the supported v1 core on npm for early adopters and integration
 testing.
 
+Release notes:
+
+- [1.0.0-beta](./release-notes/1.0.0-beta.md)
+
 Roadmap scope:
 
 - Packages 1-5 in [roadmap.md](./roadmap.md)
