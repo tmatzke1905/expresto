@@ -33,7 +33,7 @@ Release notes:
 
 Roadmap scope:
 
-- Packages 1-5 in [roadmap.md](./roadmap.md)
+- completed beta-foundation work archived from the active roadmap
 
 Included feature set:
 
@@ -59,7 +59,7 @@ Explicitly not included:
 
 Release gate:
 
-- Packages 1-5 are complete
+- beta-foundation work is complete
 - `npm run build`, `npm test`, and `npm run coverage` are green
 - release notes are drafted
 - supported docs are aligned with the implementation
@@ -78,7 +78,7 @@ Included feature set:
 
 Stable release gate:
 
-- Package 11 from [roadmap.md](./roadmap.md) is complete
+- Package 1 from [roadmap.md](./roadmap.md) is complete
 - the example project uses the published package only
 - the example project covers:
   - controller contract
@@ -98,7 +98,7 @@ Goal: add the first supported plugin release without breaking v1.
 
 Roadmap scope:
 
-- Package 7 from [roadmap.md](./roadmap.md)
+- Package 3 from [roadmap.md](./roadmap.md)
 - example project refresh for the new stable feature set
 
 Planned feature set:
@@ -123,7 +123,7 @@ Goal: extend runtime integrations around WebSockets and scheduler reliability.
 
 Roadmap scope:
 
-- Packages 8-9 from [roadmap.md](./roadmap.md)
+- Packages 4-5 from [roadmap.md](./roadmap.md)
 - example project refresh for the new stable feature set
 
 Planned feature set:
@@ -147,7 +147,7 @@ Goal: improve production operations, diagnostics, and health reporting.
 
 Roadmap scope:
 
-- Package 10 from [roadmap.md](./roadmap.md)
+- Package 6 from [roadmap.md](./roadmap.md)
 - example project refresh for the new stable feature set
 
 Planned feature set:
@@ -170,7 +170,7 @@ Target version: to be decided after design freeze
 
 Roadmap scope:
 
-- Package 6 from [roadmap.md](./roadmap.md)
+- Package 2 from [roadmap.md](./roadmap.md)
 
 Reason version is still open:
 
@@ -192,11 +192,11 @@ Stable release gate:
 
 ## Version Mapping Summary
 
-- `1.0.0-beta`: Packages 1-5
-- `1.0.0`: Packages 1-5 plus Package 11
-- `1.1.0`: Package 7 plus example refresh
-- `1.2.0`: Packages 8-9 plus example refresh
-- `1.3.0`: Package 10 plus example refresh
-- `TBD`: Package 6, version assigned after cluster design review
+- `1.0.0-beta`: completed beta-foundation work
+- `1.0.0`: beta foundation plus Package 1
+- `1.1.0`: Package 3 plus example refresh
+- `1.2.0`: Packages 4-5 plus example refresh
+- `1.3.0`: Package 6 plus example refresh
+- `TBD`: Package 2, version assigned after cluster design review
 
 _Last updated: 2026-03-15_

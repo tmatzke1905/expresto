@@ -2,9 +2,14 @@
 
 ## Release Readiness Packages
 
-For the first production-ready release, work through the following packages in
-order. Each package should be implemented in a dedicated branch and should not
-be split across multiple branches unless explicitly required.
+This roadmap lists the remaining open packages in execution order.
+
+The completed beta-foundation packages were removed from the active roadmap for
+clarity. Their outcomes are already reflected in the codebase, release notes,
+and supporting documentation.
+
+Each open package should be implemented in a dedicated branch and should not be
+split across multiple branches unless explicitly required.
 
 Execution rule for release work:
 
@@ -14,147 +19,46 @@ Execution rule for release work:
 - If scope needs to be reduced, update README and `docs/` in the same package.
 - Always generate a commit message
 
-### Package 1 — Packaging and Publishability
+## Stabilization Package (Post-beta, Pre-1.0.0)
 
-Branch: `codex/release-01-packaging`
+The first public npm prerelease is `1.0.0-beta`. The next package after the
+release gate is the example project needed to promote that beta to the stable
+`1.0.0` release.
 
-Goal: Make the published package installable, importable, and runnable without
-repo-local files.
+### Package 1 — Example App and Integration Starter
 
-Checklist:
+Branch: `codex/feature-01-example-app-starter`
 
-- [x] Fix `main`, `module`, `exports`, and `start:*` scripts so they match the
-      actual build outputs in `dist/`.
-- [x] Ensure all runtime-required files are included in the published package
-      (for example `middleware.config.schema.json` and other kept runtime
-      assets).
-- [x] Add a packaging smoke test covering `npm pack --dry-run` and a real
-      `require()` / `import()` check against the packed output.
-- [x] Verify the package can validate config without relying on the repository
-      root.
-- [x] Update README quick start and packaging notes to match the real startup
-      paths and config file names.
-
-Verification:
-
-- [x] `npm run build`
-- [x] Packaging smoke test passes
-- [x] README updated
-
-### Package 2 — Security Hardening
-
-Branch: `codex/release-02-security-hardening`
-
-Goal: Make all protected paths fail closed and remove insecure defaults.
+Goal: Give adopters a realistic reference project for the supported v1 API and
+close the stable-release gate after the beta package has been published.
 
 Checklist:
 
-- [x] Make Node 22 the minimal Node environment. GitHub Action should run on Node 22
-- [x] Make `secure: 'jwt'` reject requests when JWT is disabled or not
-      configured.
-- [x] Make `secure: 'basic'` reject requests when Basic Auth is disabled or not
-      configured.
-- [x] Remove default JWT secrets and fail startup on insecure auth
-      configuration.
-- [x] Apply the same hardening rules to WebSocket authentication.
-- [x] Decide how ops endpoints are protected in production
-      (disabled-by-config, auth-protected, or both).
-- [x] Add regression tests for negative auth paths and insecure config startup
-      failures.
-- [x] Update `docs/security.md`, `docs/websocket.md`, and relevant config docs.
+- [ ] Create a small example app that consumes the published `expresto@1.0.0-beta`
+      package only, not repo-internal imports.
+- [ ] Demonstrate the supported controller contract, auth, ops, scheduler, and
+      optional WebSocket setup.
+- [ ] Decide whether the database facade belongs inside this repository or as a
+      companion project; document the decision.
+- [ ] Add smoke checks for the example app startup path and basic requests.
+- [ ] Update README and docs to point new users to the example.
 
 Verification:
 
-- [x] `npm test -- --run`
-- [x] Security regression tests added and passing
-- [x] Security docs updated
+- [ ] Example app runs from the published beta package surface
+- [ ] Docs reference the example as the canonical starting point
+- [ ] Integration guidance no longer depends on private repo structure
 
-### Package 3 — Runtime Wiring and Config Contract
-
-Branch: `codex/release-03-runtime-contract`
-
-Goal: Ensure the runtime behavior matches the documented configuration and
-startup lifecycle.
-
-Checklist:
-
-- [x] Wire scheduler bootstrap into the normal server startup path instead of
-      relying on an unimported side-effect module.
-- [x] Add an integration test proving scheduler startup via `createServer()`.
-- [x] Make `cors.enabled`, `helmet.enabled`, and any other documented config
-      flags behave consistently.
-- [x] Decide whether `metrics.enabled` is supported; implement it or remove it
-      from the contract.
-- [x] Review lifecycle hook names and startup order for consistency between code
-      and docs.
-- [x] Update `docs/configuration.md`, `docs/lifecycle-hooks.md`,
-      `docs/startup-sequence.md`, and `docs/scheduler.md`.
-
-Verification:
-
-- [x] `npm test -- --run`
-- [x] Runtime integration tests passing
-- [x] Configuration and lifecycle docs updated
-
-### Package 4 — Supported v1 Scope and Public API
-
-Branch: `codex/release-04-v1-scope-api`
-
-Goal: Freeze a realistic supported surface for the first release.
-
-Checklist:
-
-- [x] Decide which features are officially part of v1 and which remain roadmap
-      items only.
-- [x] Export the supported public API explicitly, or reduce the docs to the
-      currently exported API.
-- [x] Remove or clearly mark unsupported features from README and docs
-      (for example plugin system, clustering, `getSocketServer()`, legacy
-      lifecycle names, outdated controller signatures).
-- [x] Align controller examples with the real controller loader contract.
-- [x] Align service registry and hook examples with the real import surface.
-- [x] Update `README.md` and all affected docs under `docs/`.
-
-Verification:
-
-- [x] Public API review completed
-- [x] README updated
-- [x] Unsupported features either implemented or removed from the release docs
-
-### Package 5 — Release Verification and Final Gate
-
-Branch: `codex/release-05-verification`
-
-Goal: Close the release with a reproducible verification pass.
-
-Checklist:
-
-- [x] Add end-to-end smoke checks for package import, secure route behavior, ops
-      endpoint policy, and scheduler startup.
-- [x] Run the full validation suite: build, tests, and coverage.
-- [x] Review open roadmap items and explicitly move non-v1 work into later
-      feature releases.
-- [x] Prepare concise release notes for the first supported release.
-- [x] If architectural behavior changed materially, add/update ADR entries in
-      `docs/design-decisions.md`.
-
-Verification:
-
-- [x] `npm run build`
-- [x] `npm test -- --run`
-- [x] `npm run coverage`
-- [x] Release notes drafted
-- [x] ADRs/doc updates completed where needed
-
-## Deferred Feature Packages (Post-v1)
+## Deferred Feature Packages (Post-1.0.0)
 
 The following feature areas are intentionally **not** part of the first
-supported production release. They should only be started after Package 5 is
-finished, or once v1 has been explicitly narrowed and shipped.
+stable production release. They should only be started after Package 1 is
+finished and `1.0.0` has been shipped, or once the release plan has been
+explicitly changed.
 
-### Package 6 — Real Clustering Support
+### Package 2 — Real Clustering Support
 
-Branch: `codex/feature-06-clustering-runtime`
+Branch: `codex/feature-02-clustering-runtime`
 
 Goal: Turn the current `cluster.enabled` placeholder into a real, supported
 multi-process runtime.
@@ -179,9 +83,9 @@ Verification:
 - [ ] Shutdown behavior is documented and tested
 - [ ] Unsupported combinations fail with clear startup errors
 
-### Package 7 — Supported Plugin System
+### Package 3 — Supported Plugin System
 
-Branch: `codex/feature-07-plugin-system`
+Branch: `codex/feature-03-plugin-system`
 
 Goal: Replace the current design-only plugin documentation with a real,
 supported plugin contract.
@@ -207,9 +111,9 @@ Verification:
 - [ ] Plugin startup failures abort safely without partial runtime state
 - [ ] Plugin docs describe only implemented behavior
 
-### Package 8 — WebSocket Extension API
+### Package 4 — WebSocket Extension API
 
-Branch: `codex/feature-08-websocket-extension-api`
+Branch: `codex/feature-04-websocket-extension-api`
 
 Goal: Introduce a deliberate developer-facing WebSocket extension surface, or
 explicitly document why it stays internal.
@@ -232,9 +136,9 @@ Verification:
 - [ ] Public WebSocket access is covered by tests or explicitly documented as unsupported
 - [ ] No docs mention private/internal access patterns anymore
 
-### Package 9 — Scheduler Reliability Extensions
+### Package 5 — Scheduler Reliability Extensions
 
-Branch: `codex/feature-09-scheduler-reliability`
+Branch: `codex/feature-05-scheduler-reliability`
 
 Goal: Add the operational controls needed for more demanding background job
 workloads.
@@ -257,9 +161,9 @@ Verification:
 - [ ] Scheduler events cover new reliability outcomes
 - [ ] Multi-instance coordination is either implemented or explicitly deferred
 
-### Package 10 — Ops and Health Maturity
+### Package 6 — Ops and Health Maturity
 
-Branch: `codex/feature-10-ops-health-observability`
+Branch: `codex/feature-06-ops-health-observability`
 
 Goal: Evolve ops endpoints from basic diagnostics into a production-ready
 observability surface.
@@ -282,48 +186,26 @@ Verification:
 - [ ] Protected ops behavior remains fail-closed
 - [ ] Observability docs match the real endpoint surface
 
-### Package 11 — Example App and Integration Starter
-
-Branch: `codex/feature-11-example-app-starter`
-
-Goal: Give adopters a realistic reference project for the supported v1 API and
-follow-up integrations.
-
-Checklist:
-
-- [ ] Create a small example app that consumes the published package only, not
-      repo-internal imports.
-- [ ] Demonstrate the supported controller contract, auth, ops, scheduler, and
-      optional WebSocket setup.
-- [ ] Decide whether the database facade belongs inside this repository or as a
-      companion project; document the decision.
-- [ ] Add smoke checks for the example app startup path and basic requests.
-- [ ] Update README and docs to point new users to the example.
-
-Verification:
-
-- [ ] Example app runs from the packaged API surface
-- [ ] Docs reference the example as the canonical starting point
-- [ ] Integration guidance no longer depends on private repo structure
-
 ### Recommended Merge Order
 
-1. `codex/release-01-packaging`
-2. `codex/release-02-security-hardening`
-3. `codex/release-03-runtime-contract`
-4. `codex/release-04-v1-scope-api`
-5. `codex/release-05-verification`
+1. `codex/feature-01-example-app-starter`
+2. `codex/feature-02-clustering-runtime`
+3. `codex/feature-03-plugin-system`
+4. `codex/feature-04-websocket-extension-api`
+5. `codex/feature-05-scheduler-reliability`
+6. `codex/feature-06-ops-health-observability`
 
 
 ## Agent Execution Order
 
 Coding agents should implement the current focus areas in the following order:
 
-1. Packaging and Publishability
-2. Security Hardening
-3. Runtime Wiring and Config Contract
-4. Supported v1 Scope and Public API
-5. Release Verification and Final Gate
+1. Example App and Stable Release Gate
+2. Real Clustering Support
+3. Supported Plugin System
+4. WebSocket Extension API
+5. Scheduler Reliability Extensions
+6. Ops and Health Maturity
 
 Execution rules:
 
