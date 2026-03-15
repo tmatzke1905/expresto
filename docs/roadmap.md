@@ -23,23 +23,23 @@ repo-local files.
 
 Checklist:
 
-- [ ] Fix `main`, `module`, `exports`, and `start:*` scripts so they match the
+- [x] Fix `main`, `module`, `exports`, and `start:*` scripts so they match the
       actual build outputs in `dist/`.
-- [ ] Ensure all runtime-required files are included in the published package
+- [x] Ensure all runtime-required files are included in the published package
       (for example `middleware.config.schema.json` and other kept runtime
       assets).
-- [ ] Add a packaging smoke test covering `npm pack --dry-run` and a real
+- [x] Add a packaging smoke test covering `npm pack --dry-run` and a real
       `require()` / `import()` check against the packed output.
-- [ ] Verify the package can validate config without relying on the repository
+- [x] Verify the package can validate config without relying on the repository
       root.
-- [ ] Update README quick start and packaging notes to match the real startup
+- [x] Update README quick start and packaging notes to match the real startup
       paths and config file names.
 
 Verification:
 
-- [ ] `npm run build`
-- [ ] Packaging smoke test passes
-- [ ] README updated
+- [x] `npm run build`
+- [x] Packaging smoke test passes
+- [x] README updated
 
 ### Package 2 — Security Hardening
 
@@ -49,6 +49,7 @@ Goal: Make all protected paths fail closed and remove insecure defaults.
 
 Checklist:
 
+- [ ] Make Node 22 the minimal Node environment. GitHub Action should run on Node 22
 - [ ] Make `secure: 'jwt'` reject requests when JWT is disabled or not
       configured.
 - [ ] Make `secure: 'basic'` reject requests when Basic Auth is disabled or not

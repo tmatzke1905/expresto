@@ -123,7 +123,15 @@ function redactObject(obj: Record<string, unknown>, path: string[]): Record<stri
   const out: Record<string, unknown> = {};
 
   for (const [k, v] of Object.entries(obj)) {
-    out[k] = SECRET_KEY_PATTERN.test(k) ? (v == null ? v : '***') : redact(v, [...path, k]);
+    if (SECRET_KEY_PATTERN.test(k)) {
+      out[k] = v;
+      if (v != null) {
+        out[k] = '***';
+      }
+      continue;
+    }
+
+    out[k] = redact(v, [...path, k]);
   }
 
   return out;
