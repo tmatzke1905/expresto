@@ -164,14 +164,14 @@ export class SecurityProvider {
       // Offene Routen und authentisierte Routen laufen beide durch denselben SECURITY-Hook.
       await this.authorizeRequest(req, res, meta);
 
-      this.emitSecurityEvent('expresto.security.authorize', {
+      this.emitSecurityEvent('expresto-server.security.authorize', {
         ...reqMeta,
         result: 'allowed',
       });
 
       next();
     } catch (err) {
-      this.emitSecurityEvent('expresto.security.authorize', {
+      this.emitSecurityEvent('expresto-server.security.authorize', {
         ...reqMeta,
         result: 'denied',
         status: err instanceof HttpError ? err.status : undefined,
@@ -217,7 +217,7 @@ export class SecurityProvider {
     const header = req.headers['authorization'];
     if (!header || !header.startsWith('Basic ')) {
       this.logger.app.warn('BasicAuth: Missing or invalid Authorization header');
-      res.set('WWW-Authenticate', 'Basic realm="expresto", charset="UTF-8"');
+      res.set('WWW-Authenticate', 'Basic realm="expresto-server", charset="UTF-8"');
       throw new HttpError(401, 'Unauthorized');
     }
 
@@ -227,7 +227,7 @@ export class SecurityProvider {
       decoded = Buffer.from(base64, 'base64').toString('utf8');
     } catch {
       this.logger.app.warn('BasicAuth: Cannot decode credentials');
-      res.set('WWW-Authenticate', 'Basic realm="expresto", charset="UTF-8"');
+      res.set('WWW-Authenticate', 'Basic realm="expresto-server", charset="UTF-8"');
       throw new HttpError(401, 'Unauthorized');
     }
 
@@ -237,7 +237,7 @@ export class SecurityProvider {
 
     if (!this.checkBasicCredentials(username, password)) {
       this.logger.app.warn('BasicAuth: Invalid credentials for user', username);
-      res.set('WWW-Authenticate', 'Basic realm="expresto", charset="UTF-8"');
+      res.set('WWW-Authenticate', 'Basic realm="expresto-server", charset="UTF-8"');
       throw new HttpError(401, 'Unauthorized');
     }
 

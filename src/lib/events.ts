@@ -93,7 +93,7 @@ export class EventBus implements StableEventBus {
    * Emitted when a listener throws/rejects.
    * Consumers may subscribe to handle/log these errors centrally.
    */
-  static readonly LISTENER_ERROR_EVENT = 'expresto.eventbus.listener_error';
+  static readonly LISTENER_ERROR_EVENT = 'expresto-server.eventbus.listener_error';
 
   constructor(maxListeners?: number);
   constructor(options?: EventBusOptions);
@@ -138,7 +138,7 @@ export class EventBus implements StableEventBus {
 
   /**
    * Subscribe to all events with a given prefix.
-   * Example: onNamespace('expresto.websocket.', ...)
+   * Example: onNamespace('expresto-server.websocket.', ...)
    * Returns an unsubscribe function.
    */
   onNamespace(prefix: string, handler: AnyEventHandler): () => void {

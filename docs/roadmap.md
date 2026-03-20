@@ -34,7 +34,7 @@ close the stable-release gate after the beta package has been published.
 
 Checklist:
 
-- [ ] Create a small example app that consumes the published `expresto@1.0.0-beta`
+- [ ] Create a small example app that consumes the published `expresto-server@1.0.0-beta`
       package only, not repo-internal imports.
 - [ ] Demonstrate the supported controller contract, auth, ops, scheduler, and
       optional WebSocket setup.
@@ -261,11 +261,11 @@ emitAsync(event, payload)
 - [x] Define naming convention
 
 ```
-expresto.*
-expresto.ops.*
-expresto.websocket.*
-expresto.scheduler.*
-expresto.security.*
+expresto-server.*
+expresto-server.ops.*
+expresto-server.websocket.*
+expresto-server.scheduler.*
+expresto-server.security.*
 ```
 
 - [x] Define payload standard
@@ -299,10 +299,10 @@ Tasks:
 - [x] Emit lifecycle events
 
 ```
-expresto.websocket.connected
-expresto.websocket.disconnected
-expresto.websocket.error
-expresto.websocket.message
+expresto-server.websocket.connected
+expresto-server.websocket.disconnected
+expresto-server.websocket.error
+expresto-server.websocket.message
 ```
 
 - [x] Improve handshake context
@@ -338,11 +338,11 @@ Tasks:
 - [x] Emit scheduler events
 
 ```
-expresto.scheduler.started
-expresto.scheduler.job.start
-expresto.scheduler.job.success
-expresto.scheduler.job.error
-expresto.scheduler.stopped
+expresto-server.scheduler.started
+expresto-server.scheduler.job.start
+expresto-server.scheduler.job.success
+expresto-server.scheduler.job.error
+expresto-server.scheduler.stopped
 ```
 
 - [ ] Add job timeout support
@@ -466,7 +466,7 @@ afterAuthorize
 - [ ] Resource authorization hook
 
 ```
-expresto.security.authorize
+expresto-server.security.authorize
 ```
 
 - [ ] WebSocket authentication support

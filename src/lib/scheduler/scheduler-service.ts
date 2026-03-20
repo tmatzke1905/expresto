@@ -62,7 +62,7 @@ export class SchedulerService {
       this.register(name, jobCfg, module);
     }
     this.ctx.logger.app.info(`[Scheduler] initialized (${this.tasks.size} jobs)`);
-    this.emit('expresto.scheduler.started', {
+    this.emit('expresto-server.scheduler.started', {
       mode: this.cfg.mode ?? 'attached',
       jobCount: this.tasks.size,
     });
@@ -80,7 +80,7 @@ export class SchedulerService {
         async () => {
           if (scheduled.running) {
             this.ctx.logger.app.warn(`[Scheduler] skip "${name}" — still running`);
-            this.emit('expresto.scheduler.job.skipped', {
+            this.emit('expresto-server.scheduler.job.skipped', {
               job: name,
               reason: 'running',
             });
@@ -91,7 +91,7 @@ export class SchedulerService {
             const ok = await Promise.resolve(this.leaderCheck());
             if (!ok) {
               this.ctx.logger.app.debug(`[Scheduler] skip "${name}" — not leader`);
-              this.emit('expresto.scheduler.job.skipped', {
+              this.emit('expresto-server.scheduler.job.skipped', {
                 job: name,
                 reason: 'not_leader',
               });
@@ -101,21 +101,21 @@ export class SchedulerService {
           scheduled.running = true;
           const started = Date.now();
           this.ctx.logger.app.info(`[Scheduler] start "${name}"`);
-          this.emit('expresto.scheduler.job.start', {
+          this.emit('expresto-server.scheduler.job.start', {
             job: name,
           });
           try {
             await mod.run(this.ctx, cfg.options);
             const dur = Date.now() - started;
             this.ctx.logger.app.info(`[Scheduler] done "${name}" in ${dur}ms`);
-            this.emit('expresto.scheduler.job.success', {
+            this.emit('expresto-server.scheduler.job.success', {
               job: name,
               durationMs: dur,
             });
           } catch (err) {
             const dur = Date.now() - started;
             this.ctx.logger.app.error(`[Scheduler] error in "${name}"`, err);
-            this.emit('expresto.scheduler.job.error', {
+            this.emit('expresto-server.scheduler.job.error', {
               job: name,
               durationMs: dur,
               error: serializeError(err),
@@ -144,18 +144,18 @@ export class SchedulerService {
       if (cancelled) return;
       const started = Date.now();
       this.ctx.logger.app.info(`[Scheduler] timeout "${name}" start`);
-      this.emit('expresto.scheduler.timeout.start', { name });
+      this.emit('expresto-server.scheduler.timeout.start', { name });
       try {
         await fn();
         this.ctx.logger.app.info(`[Scheduler] timeout "${name}" done in ${Date.now() - started}ms`);
-        this.emit('expresto.scheduler.timeout.success', {
+        this.emit('expresto-server.scheduler.timeout.success', {
           name,
           durationMs: Date.now() - started,
         });
       } catch (err) {
         const dur = Date.now() - started;
         this.ctx.logger.app.error(`[Scheduler] timeout "${name}" error`, err);
-        this.emit('expresto.scheduler.timeout.error', {
+        this.emit('expresto-server.scheduler.timeout.error', {
           name,
           durationMs: dur,
           error: serializeError(err),
@@ -209,7 +209,7 @@ export class SchedulerService {
   cancelAll() {
     const cancelledJobs = this.tasks.size;
     for (const name of this.tasks.keys()) this.cancel(name);
-    this.emit('expresto.scheduler.stopped', {
+    this.emit('expresto-server.scheduler.stopped', {
       jobCount: cancelledJobs,
     });
   }

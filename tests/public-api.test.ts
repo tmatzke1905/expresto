@@ -51,8 +51,8 @@ describe('public root API', () => {
     const seen = vi.fn();
     const payload = createEventPayload('public-api-test', { feature: 'events' });
 
-    eventBus.on('expresto.public.test', seen);
-    await eventBus.emitAsync('expresto.public.test', payload);
+    eventBus.on('expresto-server.public.test', seen);
+    await eventBus.emitAsync('expresto-server.public.test', payload);
 
     expect(seen).toHaveBeenCalledWith(
       expect.objectContaining({

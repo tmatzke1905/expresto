@@ -15,11 +15,11 @@ export function otelMiddleware(config: AppConfig, logger: AppLogger): RequestHan
     return (_req, _res, next) => next();
   }
 
-  const tracer = __tracerOverride || trace.getTracer('expresto', '1.0.0');
+  const tracer = __tracerOverride || trace.getTracer('expresto-server', '1.0.0');
 
   return (req, res, next) => {
     const route = req.route?.path || req.path || 'unknown';
-    const spanName = `expresto.http_request ${req.method} ${route}`;
+    const spanName = `expresto-server.http_request ${req.method} ${route}`;
 
     tracer.startActiveSpan(spanName, span => {
       try {

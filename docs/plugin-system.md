@@ -4,7 +4,7 @@
 
 This topic is roadmap-only and is not part of the supported v1 release.
 
-expRESTo does not currently load plugins from configuration and does not expose
+expresto-server does not currently load plugins from configuration and does not expose
 a stable plugin runtime contract in the published package.
 
 ## Why This Document Exists

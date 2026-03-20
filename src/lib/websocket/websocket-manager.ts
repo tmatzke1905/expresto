@@ -79,7 +79,7 @@ export class WebSocketManager {
       if (!this.jwtEnabled) {
         this.logger.app.error('WebSocket connection rejected: JWT auth is disabled');
         this.eventBus.emit(
-          'expresto.websocket.error',
+          'expresto-server.websocket.error',
           createEventPayload('websocket-manager', {
             stage: 'handshake',
             reason: 'jwt_not_configured',
@@ -92,7 +92,7 @@ export class WebSocketManager {
       if (!token) {
         this.logger.app.warn('WebSocket connection rejected: missing token');
         this.eventBus.emit(
-          'expresto.websocket.error',
+          'expresto-server.websocket.error',
           createEventPayload('websocket-manager', {
             stage: 'handshake',
             reason: 'missing_token',
@@ -119,7 +119,7 @@ export class WebSocketManager {
       } catch (err) {
         this.logger.app.warn('WebSocket connection rejected: invalid token');
         this.eventBus.emit(
-          'expresto.websocket.error',
+          'expresto-server.websocket.error',
           createEventPayload('websocket-manager', {
             stage: 'handshake',
             reason: 'invalid_token',
@@ -139,7 +139,7 @@ export class WebSocketManager {
       const s = this.socketState(socket);
       const socketContext = s.data?.context ?? s.context;
       this.eventBus.emit(
-        'expresto.websocket.connected',
+        'expresto-server.websocket.connected',
         createEventPayload('websocket-manager', {
           socketId: socket.id,
           auth: s.data?.auth,
@@ -151,7 +151,7 @@ export class WebSocketManager {
         socket.onAny((eventName, ...args) => {
           if (WebSocketManager.RESERVED_MESSAGE_EVENTS.has(eventName)) return;
           this.eventBus.emit(
-            'expresto.websocket.message',
+            'expresto-server.websocket.message',
             createEventPayload('websocket-manager', {
               socketId: socket.id,
               event: eventName,
@@ -164,7 +164,7 @@ export class WebSocketManager {
 
       socket.on('error', err => {
         this.eventBus.emit(
-          'expresto.websocket.error',
+          'expresto-server.websocket.error',
           createEventPayload('websocket-manager', {
             stage: 'runtime',
             socketId: socket.id,
@@ -178,7 +178,7 @@ export class WebSocketManager {
       socket.on('disconnect', reason => {
         this.logger.app.info(`WebSocket client disconnected: ${socket.id} (${reason})`);
         this.eventBus.emit(
-          'expresto.websocket.disconnected',
+          'expresto-server.websocket.disconnected',
           createEventPayload('websocket-manager', {
             socketId: socket.id,
             reason,

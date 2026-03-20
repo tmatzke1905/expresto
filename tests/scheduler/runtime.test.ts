@@ -56,7 +56,7 @@ describe('scheduler runtime bootstrap', () => {
 
     expect(ctx.logger.app.info).toHaveBeenCalledWith('[Scheduler] disabled');
     expect(ctx.services.has('scheduler')).toBe(false);
-    expectEvent(emit, 'expresto.scheduler.disabled', {
+    expectEvent(emit, 'expresto-server.scheduler.disabled', {
       source: 'scheduler-runtime',
       reason: 'config_disabled',
     });
@@ -89,7 +89,7 @@ describe('scheduler runtime bootstrap', () => {
 
     expect(ctx.logger.app.warn).toHaveBeenCalledWith('[Scheduler] disabled (cluster mode active)');
     expect(ctx.services.has('scheduler')).toBe(false);
-    expectEvent(emit, 'expresto.scheduler.disabled', {
+    expectEvent(emit, 'expresto-server.scheduler.disabled', {
       source: 'scheduler-runtime',
       reason: 'cluster_enabled',
     });
@@ -111,7 +111,7 @@ describe('scheduler runtime bootstrap', () => {
       '[Scheduler] standalone mode is not allowed with cluster enabled'
     );
 
-    expectEvent(emit, 'expresto.scheduler.startup_error', {
+    expectEvent(emit, 'expresto-server.scheduler.startup_error', {
       source: 'scheduler-runtime',
       reason: 'standalone_with_cluster',
       mode: 'standalone',
@@ -156,7 +156,7 @@ describe('scheduler runtime bootstrap', () => {
 
     expect(initSpy).toHaveBeenCalledTimes(1);
     expect(ctx.services.has('scheduler')).toBe(true);
-    expectEvent(emit, 'expresto.scheduler.starting', {
+    expectEvent(emit, 'expresto-server.scheduler.starting', {
       source: 'scheduler-runtime',
       mode: 'attached',
     });
@@ -200,7 +200,7 @@ describe('scheduler runtime bootstrap', () => {
     await expect(startScheduler(ctx)).rejects.toBe('boom');
 
     expect(ctx.services.has('scheduler')).toBe(false);
-    expectEvent(emit, 'expresto.scheduler.startup_error', {
+    expectEvent(emit, 'expresto-server.scheduler.startup_error', {
       source: 'scheduler-runtime',
       reason: 'initialization_failed',
       mode: 'attached',
@@ -237,7 +237,7 @@ describe('scheduler runtime bootstrap', () => {
     );
 
     expect(ctx.services.has('scheduler')).toBe(false);
-    expectEvent(emit, 'expresto.scheduler.startup_error', {
+    expectEvent(emit, 'expresto-server.scheduler.startup_error', {
       source: 'scheduler-runtime',
       reason: 'initialization_failed',
     });
@@ -253,7 +253,7 @@ describe('scheduler runtime bootstrap', () => {
     expect(shutdown).toHaveBeenCalledTimes(1);
     expect(ctx.services.has('scheduler')).toBe(false);
     expect(ctx.logger.app.info).toHaveBeenCalledWith('[Scheduler] shutting down...');
-    expectEvent(emit, 'expresto.scheduler.stopping', {
+    expectEvent(emit, 'expresto-server.scheduler.stopping', {
       source: 'scheduler-runtime',
     });
   });
@@ -264,6 +264,6 @@ describe('scheduler runtime bootstrap', () => {
     await stopScheduler(ctx);
 
     expect(ctx.logger.app.info).not.toHaveBeenCalledWith('[Scheduler] shutting down...');
-    expect(emit.mock.calls.some(([event]) => event === 'expresto.scheduler.stopping')).toBe(false);
+    expect(emit.mock.calls.some(([event]) => event === 'expresto-server.scheduler.stopping')).toBe(false);
   });
 });

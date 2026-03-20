@@ -40,17 +40,17 @@ describe('EventBus', () => {
     const bus = new EventBus();
 
     const calls: string[] = [];
-    bus.onNamespace('expresto.websocket.', (event, payload) => {
+    bus.onNamespace('expresto-server.websocket.', (event, payload) => {
       calls.push(`${event}:${String((payload as any).id)}`);
     });
 
-    await bus.emitAsync('expresto.websocket.connected', { id: '1' });
-    await bus.emitAsync('expresto.scheduler.started', { id: '2' });
-    await bus.emitAsync('expresto.websocket.disconnected', { id: '3' });
+    await bus.emitAsync('expresto-server.websocket.connected', { id: '1' });
+    await bus.emitAsync('expresto-server.scheduler.started', { id: '2' });
+    await bus.emitAsync('expresto-server.websocket.disconnected', { id: '3' });
 
     expect(calls).toEqual([
-      'expresto.websocket.connected:1',
-      'expresto.websocket.disconnected:3',
+      'expresto-server.websocket.connected:1',
+      'expresto-server.websocket.disconnected:3',
     ]);
   });
 
@@ -59,11 +59,11 @@ describe('EventBus', () => {
 
     const calls: string[] = [];
 
-    bus.on('expresto.websocket.connected', () => {
+    bus.on('expresto-server.websocket.connected', () => {
       calls.push('exact');
     });
 
-    bus.onNamespace('expresto.websocket.', () => {
+    bus.onNamespace('expresto-server.websocket.', () => {
       calls.push('ns');
     });
 
@@ -71,7 +71,7 @@ describe('EventBus', () => {
       calls.push('any');
     });
 
-    await bus.emitAsync('expresto.websocket.connected', { ok: true });
+    await bus.emitAsync('expresto-server.websocket.connected', { ok: true });
     expect(calls).toEqual(['exact', 'ns', 'any']);
   });
 

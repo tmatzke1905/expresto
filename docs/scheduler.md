@@ -33,7 +33,7 @@ Supported modes:
 
 ## Job Resolution
 
-For each configured job, expRESTo resolves `scheduler.jobs.<name>.module` like
+For each configured job, expresto-server resolves `scheduler.jobs.<name>.module` like
 this:
 
 1. If a service with that exact key exists in the ServiceRegistry and looks like
@@ -44,7 +44,7 @@ this:
 Each job module must export:
 
 ```ts
-import type { SchedulerModule } from 'expresto';
+import type { SchedulerModule } from 'expresto-server';
 
 const cleanupJob: SchedulerModule = {
   id: 'cleanup',
@@ -67,9 +67,9 @@ export default cleanupJob;
 Cluster interaction:
 
 - `cluster.enabled: true` disables attached scheduler startup and emits
-  `expresto.scheduler.disabled`.
+  `expresto-server.scheduler.disabled`.
 - `scheduler.mode: "standalone"` together with `cluster.enabled: true` aborts
-  startup with `expresto.scheduler.startup_error`.
+  startup with `expresto-server.scheduler.startup_error`.
 
 Standalone note:
 
@@ -83,12 +83,12 @@ Lifecycle events:
 
 | Event | Meaning |
 |------|---------|
-| `expresto.scheduler.disabled` | Scheduler was intentionally not started |
-| `expresto.scheduler.starting` | Scheduler bootstrap began |
-| `expresto.scheduler.started` | Scheduler finished registration |
-| `expresto.scheduler.startup_error` | Scheduler bootstrap failed |
-| `expresto.scheduler.stopping` | Scheduler shutdown began |
-| `expresto.scheduler.stopped` | Scheduler shutdown completed |
+| `expresto-server.scheduler.disabled` | Scheduler was intentionally not started |
+| `expresto-server.scheduler.starting` | Scheduler bootstrap began |
+| `expresto-server.scheduler.started` | Scheduler finished registration |
+| `expresto-server.scheduler.startup_error` | Scheduler bootstrap failed |
+| `expresto-server.scheduler.stopping` | Scheduler shutdown began |
+| `expresto-server.scheduler.stopped` | Scheduler shutdown completed |
 
 Lifecycle `reason` values currently include:
 
@@ -101,13 +101,13 @@ Execution events:
 
 | Event | Meaning |
 |------|---------|
-| `expresto.scheduler.job.start` | A cron job started |
-| `expresto.scheduler.job.success` | A cron job finished successfully |
-| `expresto.scheduler.job.error` | A cron job failed |
-| `expresto.scheduler.job.skipped` | A cron job was skipped |
-| `expresto.scheduler.timeout.start` | A timeout task started |
-| `expresto.scheduler.timeout.success` | A timeout task finished successfully |
-| `expresto.scheduler.timeout.error` | A timeout task failed |
+| `expresto-server.scheduler.job.start` | A cron job started |
+| `expresto-server.scheduler.job.success` | A cron job finished successfully |
+| `expresto-server.scheduler.job.error` | A cron job failed |
+| `expresto-server.scheduler.job.skipped` | A cron job was skipped |
+| `expresto-server.scheduler.timeout.start` | A timeout task started |
+| `expresto-server.scheduler.timeout.success` | A timeout task finished successfully |
+| `expresto-server.scheduler.timeout.error` | A timeout task failed |
 
 ## Logging
 

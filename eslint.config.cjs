@@ -1,4 +1,4 @@
-// eslint.config.cjs - minimal flat config for expresto
+// eslint.config.cjs - minimal flat config for expresto-server
 
 const tsParser = require('@typescript-eslint/parser');
 const tsPlugin = require('@typescript-eslint/eslint-plugin');

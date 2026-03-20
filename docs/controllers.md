@@ -1,12 +1,12 @@
 # Controllers
 
-The stable v1 controller contract in expRESTo is a default export with a
+The stable v1 controller contract in expresto-server is a default export with a
 `route` string and a `handlers` array.
 
 ## Supported Controller Shape
 
 ```ts
-import type { ExtRequest, ExtResponse } from 'expresto';
+import type { ExtRequest, ExtResponse } from 'expresto-server';
 
 export default {
   route: '/users',

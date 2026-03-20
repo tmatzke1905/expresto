@@ -64,7 +64,7 @@ async function runMiddleware(
 }
 
 describe('SecurityProvider EventBus integration', () => {
-  it('emits expresto.security.authorize with result=allowed on successful JWT auth', async () => {
+  it('emits expresto-server.security.authorize with result=allowed on successful JWT auth', async () => {
     const eventBus = new EventBus();
     const seen: Array<{ event: string; payload: unknown }> = [];
     eventBus.onAny((event, payload) => {
@@ -89,7 +89,7 @@ describe('SecurityProvider EventBus integration', () => {
     );
 
     expect(err).toBeUndefined();
-    const evt = seen.find(x => x.event === 'expresto.security.authorize');
+    const evt = seen.find(x => x.event === 'expresto-server.security.authorize');
     expect(evt).toBeDefined();
     expect(evt?.payload).toEqual(
       expect.objectContaining({
@@ -103,7 +103,7 @@ describe('SecurityProvider EventBus integration', () => {
     );
   });
 
-  it('emits expresto.security.authorize with result=denied on JWT rejection', async () => {
+  it('emits expresto-server.security.authorize with result=denied on JWT rejection', async () => {
     const eventBus = new EventBus();
     const seen: Array<{ event: string; payload: unknown }> = [];
     eventBus.onAny((event, payload) => {
@@ -126,7 +126,7 @@ describe('SecurityProvider EventBus integration', () => {
     expect(err).toBeInstanceOf(HttpError);
     expect((err as HttpError).status).toBe(401);
 
-    const evt = seen.find(x => x.event === 'expresto.security.authorize');
+    const evt = seen.find(x => x.event === 'expresto-server.security.authorize');
     expect(evt).toBeDefined();
     expect(evt?.payload).toEqual(
       expect.objectContaining({

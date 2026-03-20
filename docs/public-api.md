@@ -1,7 +1,7 @@
 # Public API
 
 This document defines the supported npm package surface for the first
-production release of expRESTo.
+production release of expresto-server.
 
 Only the APIs documented here are considered stable package entrypoints for
 v1.x.
@@ -70,7 +70,7 @@ Stable config and authoring types:
 
 ### `createServer(configInput)`
 
-Creates the expRESTo runtime from either:
+Creates the expresto-server runtime from either:
 
 - a path to a JSON config file
 - an `AppConfig` object
@@ -89,7 +89,7 @@ It returns:
 Example with a config file:
 
 ```ts
-import { createServer } from 'expresto';
+import { createServer } from 'expresto-server';
 
 const runtime = await createServer('./middleware.config.prod.json');
 
@@ -99,7 +99,7 @@ runtime.app.listen(runtime.config.port, runtime.config.host ?? '0.0.0.0');
 Example with an inline config object:
 
 ```ts
-import { createServer, type AppConfig } from 'expresto';
+import { createServer, type AppConfig } from 'expresto-server';
 
 const config: AppConfig = {
   port: 3000,
@@ -144,7 +144,7 @@ Supported `HookManager` instance methods:
 Typical usage with the shared `hookManager`:
 
 ```ts
-import { hookManager, LifecycleHook } from 'expresto';
+import { hookManager, LifecycleHook } from 'expresto-server';
 
 hookManager.on(LifecycleHook.STARTUP, async ctx => {
   const cache = await createCacheClient();
@@ -161,7 +161,7 @@ hookManager.on(LifecycleHook.POST_INIT, async ctx => {
 Isolated usage in tests or standalone modules:
 
 ```ts
-import { HookManager, LifecycleHook, ServiceRegistry } from 'expresto';
+import { HookManager, LifecycleHook, ServiceRegistry } from 'expresto-server';
 
 const hooks = new HookManager();
 const services = new ServiceRegistry();
@@ -208,7 +208,7 @@ framework events.
 Example:
 
 ```ts
-import { EventBus, createEventPayload } from 'expresto';
+import { EventBus, createEventPayload } from 'expresto-server';
 
 const eventBus = new EventBus({
   onUnhandledListenerError: ({ event, error }) => {
@@ -266,7 +266,7 @@ Supported `ServiceRegistry` methods:
 Example:
 
 ```ts
-import { ServiceRegistry } from 'expresto';
+import { ServiceRegistry } from 'expresto-server';
 
 const services = new ServiceRegistry();
 
@@ -307,7 +307,7 @@ Use these errors in controllers and hooks when you want HTTP-aware failures.
 Example controller:
 
 ```ts
-import { BadRequestError, NotFoundError, type ExtRequest, type ExtResponse } from 'expresto';
+import { BadRequestError, NotFoundError, type ExtRequest, type ExtResponse } from 'expresto-server';
 
 export default {
   route: '/users',
@@ -345,7 +345,7 @@ Stable JWT exports:
 Example:
 
 ```ts
-import { signToken, verifyToken } from 'expresto';
+import { signToken, verifyToken } from 'expresto-server';
 
 const secret = 'replace-with-a-real-secret';
 
@@ -380,7 +380,7 @@ The following user-facing contracts are supported in v1:
 Controller authoring example:
 
 ```ts
-import type { ExtRequest, ExtResponse } from 'expresto';
+import type { ExtRequest, ExtResponse } from 'expresto-server';
 
 export default {
   route: '/ping',
@@ -400,7 +400,7 @@ export default {
 Scheduler job authoring example:
 
 ```ts
-import type { SchedulerModule } from 'expresto';
+import type { SchedulerModule } from 'expresto-server';
 
 const cleanupJob: SchedulerModule = {
   id: 'cleanup',
@@ -415,7 +415,7 @@ export default cleanupJob;
 Schema resolution example:
 
 ```ts
-const schemaPath = require.resolve('expresto/middleware.config.schema.json');
+const schemaPath = require.resolve('expresto-server/middleware.config.schema.json');
 ```
 
 See the focused guides for the full authoring contracts:

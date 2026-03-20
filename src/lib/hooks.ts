@@ -71,7 +71,7 @@ export class HookManager {
    *
    * Example usage:
    * ```ts
-   * import { hookManager, LifecycleHook } from 'expresto';
+   * import { hookManager, LifecycleHook } from 'expresto-server';
    *
    * hookManager.on(LifecycleHook.STARTUP, async (ctx) => {
    *   ctx.logger.app.info("Custom service started");

@@ -59,7 +59,7 @@ export async function startScheduler(ctx: HookContext): Promise<void> {
 
   if (!schedCfg?.enabled) {
     eventBus?.emit(
-      'expresto.scheduler.disabled',
+      'expresto-server.scheduler.disabled',
       createEventPayload('scheduler-runtime', { reason: 'config_disabled' })
     );
     ctx.logger.app.info('[Scheduler] disabled');
@@ -75,7 +75,7 @@ export async function startScheduler(ctx: HookContext): Promise<void> {
     if (schedCfg.mode === 'standalone') {
       const err = new Error('[Scheduler] standalone mode is not allowed with cluster enabled');
       eventBus?.emit(
-        'expresto.scheduler.startup_error',
+        'expresto-server.scheduler.startup_error',
         createEventPayload('scheduler-runtime', {
           reason: 'standalone_with_cluster',
           mode: schedCfg.mode,
@@ -87,14 +87,14 @@ export async function startScheduler(ctx: HookContext): Promise<void> {
 
     ctx.logger.app.warn('[Scheduler] disabled (cluster mode active)');
     eventBus?.emit(
-      'expresto.scheduler.disabled',
+      'expresto-server.scheduler.disabled',
       createEventPayload('scheduler-runtime', { reason: 'cluster_enabled' })
     );
     return;
   }
 
   eventBus?.emit(
-    'expresto.scheduler.starting',
+    'expresto-server.scheduler.starting',
     createEventPayload('scheduler-runtime', { mode: schedCfg.mode ?? 'attached' })
   );
 
@@ -106,7 +106,7 @@ export async function startScheduler(ctx: HookContext): Promise<void> {
   } catch (err) {
     ctx.services.delete('scheduler');
     eventBus?.emit(
-      'expresto.scheduler.startup_error',
+      'expresto-server.scheduler.startup_error',
       createEventPayload('scheduler-runtime', {
         reason: 'initialization_failed',
         mode: schedCfg.mode ?? 'attached',
@@ -125,7 +125,7 @@ export async function stopScheduler(ctx: HookContext): Promise<void> {
   const eventBus = ctx.eventBus;
   const scheduler = ctx.services.get<SchedulerService>('scheduler');
 
-  eventBus?.emit('expresto.scheduler.stopping', createEventPayload('scheduler-runtime'));
+  eventBus?.emit('expresto-server.scheduler.stopping', createEventPayload('scheduler-runtime'));
   ctx.logger.app.info('[Scheduler] shutting down...');
   await scheduler.shutdown();
   ctx.services.delete('scheduler');

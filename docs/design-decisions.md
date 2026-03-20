@@ -62,7 +62,7 @@ Other modules subscribe to these events.
 Example:
 
 ```
-eventBus.emit("expresto.websocket.connected", payload)
+eventBus.emit("expresto-server.websocket.connected", payload)
 ```
 
 ## Consequences
@@ -198,7 +198,7 @@ Example:
 ```
 export default async function plugin(ctx) {
 
-  ctx.eventBus.on("expresto.websocket.connected", handler)
+  ctx.eventBus.on("expresto-server.websocket.connected", handler)
 
 }
 ```
@@ -231,10 +231,10 @@ Emit important runtime events through the EventBus.
 Examples:
 
 ```
-expresto.websocket.connected
-expresto.scheduler.job.success
-expresto.scheduler.job.error
-expresto.startup.complete
+expresto-server.websocket.connected
+expresto-server.scheduler.job.success
+expresto-server.scheduler.job.error
+expresto-server.startup.complete
 ```
 
 Monitoring systems can subscribe to these events.
@@ -323,8 +323,8 @@ Connection lifecycle events are emitted.
 Example:
 
 ```
-expresto.websocket.connected
-expresto.websocket.disconnected
+expresto-server.websocket.connected
+expresto-server.websocket.disconnected
 ```
 
 ## Consequences

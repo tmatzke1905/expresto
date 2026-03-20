@@ -1,4 +1,4 @@
-# expRESTo Middleware Roadmap
+# expresto-server Middleware Roadmap
 
 ## Version 0.x – MVP / Hauptfunktionalität (Early Access)
 

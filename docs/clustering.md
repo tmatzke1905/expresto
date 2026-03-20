@@ -4,7 +4,7 @@
 
 This topic is roadmap-only and is not part of the supported v1 release.
 
-expRESTo currently does not implement a full multi-process Node.js cluster
+expresto-server currently does not implement a full multi-process Node.js cluster
 runtime.
 
 ## What Exists Today

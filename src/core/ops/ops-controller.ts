@@ -63,10 +63,10 @@ type ConfigLike = {
  * Retrieve an optional EventBus from `app.locals`.
  *
  * When present, ops endpoints emit namespaced events such as:
- * - expresto.ops.health_read
- * - expresto.ops.routes_read
- * - expresto.ops.config_read / expresto.ops.config_error
- * - expresto.ops.logs_read / expresto.ops.logs_error / expresto.ops.logs_not_found
+ * - expresto-server.ops.health_read
+ * - expresto-server.ops.routes_read
+ * - expresto-server.ops.config_read / expresto-server.ops.config_error
+ * - expresto-server.ops.logs_read / expresto-server.ops.logs_error / expresto-server.ops.logs_not_found
  */
 function getEventBus(req: express.Request): EventBusLike | undefined {
   // The bootstrap may attach the EventBus to app.locals.
@@ -164,13 +164,13 @@ function redact(value: unknown, path: string[] = []): unknown {
  * - uptime: process uptime in seconds
  * - services: names of registered services (if ServiceRegistry is available)
  *
- * Emits: expresto.ops.health_read
+ * Emits: expresto-server.ops.health_read
  */
 opsController.get('/__health', (req, res) => {
   const services = getServices(req);
   const serviceNames = services ? Object.keys(services.getAll()) : [];
 
-  getEventBus(req)?.emit('expresto.ops.health_read', createEventPayload('ops-controller', {
+  getEventBus(req)?.emit('expresto-server.ops.health_read', createEventPayload('ops-controller', {
     endpoint: '/__health',
     services: serviceNames,
   }));
@@ -197,7 +197,7 @@ opsController.get('/__health', (req, res) => {
  * - secure: "jwt" | "basic" | "none"
  * - source: origin identifier (e.g. controller file), defaults to "unknown"
  *
- * Emits: expresto.ops.routes_read (includes which source was used)
+ * Emits: expresto-server.ops.routes_read (includes which source was used)
  */
 opsController.get('/__routes', (req, res) => {
   const services = getServices(req);
@@ -217,7 +217,7 @@ opsController.get('/__routes', (req, res) => {
 
   const routesSource = serviceRoutes ? 'service-registry' : 'route-registry';
 
-  getEventBus(req)?.emit('expresto.ops.routes_read', {
+  getEventBus(req)?.emit('expresto-server.ops.routes_read', {
     ...createEventPayload('ops-controller', {
       endpoint: '/__routes',
       count: routes.length,
@@ -237,21 +237,21 @@ opsController.get('/__routes', (req, res) => {
  * secret-like keys and special cases such as `auth.basic.users`.
  *
  * Emits:
- * - expresto.ops.config_read on success
- * - expresto.ops.config_error on failure
+ * - expresto-server.ops.config_read on success
+ * - expresto-server.ops.config_error on failure
  */
 opsController.get('/__config', (req, res) => {
   try {
     const cfg = redact(getLoadedConfig());
 
     getEventBus(req)?.emit(
-      'expresto.ops.config_read',
+      'expresto-server.ops.config_read',
       createEventPayload('ops-controller', { endpoint: '/__config' })
     );
 
     res.json(cfg);
   } catch (err) {
-    getEventBus(req)?.emit('expresto.ops.config_error', createEventPayload('ops-controller', {
+    getEventBus(req)?.emit('expresto-server.ops.config_error', createEventPayload('ops-controller', {
       endpoint: '/__config',
       error: String(err),
     }));
@@ -275,9 +275,9 @@ opsController.get('/__config', (req, res) => {
  * - Fallback to ./logs/{type}.log (useful in tests)
  *
  * Emits:
- * - expresto.ops.logs_read on success
- * - expresto.ops.logs_error on read errors
- * - expresto.ops.logs_not_found when type is invalid
+ * - expresto-server.ops.logs_read on success
+ * - expresto-server.ops.logs_error on read errors
+ * - expresto-server.ops.logs_not_found when type is invalid
  */
 opsController.get('/__logs/:type', async (req, res) => {
   const { type } = req.params;
@@ -287,7 +287,7 @@ opsController.get('/__logs/:type', async (req, res) => {
   const eventBus = getEventBus(req);
 
   if (!['application', 'access'].includes(type)) {
-    eventBus?.emit('expresto.ops.logs_not_found', {
+    eventBus?.emit('expresto-server.ops.logs_not_found', {
       ...createEventPayload('ops-controller'),
       endpoint: '/__logs/:type',
       type,
@@ -319,7 +319,7 @@ opsController.get('/__logs/:type', async (req, res) => {
 
   try {
     const content = await readLogTail(filePath, lineCount);
-    eventBus?.emit('expresto.ops.logs_read', {
+    eventBus?.emit('expresto-server.ops.logs_read', {
       ...createEventPayload('ops-controller'),
       endpoint: '/__logs/:type',
       type,
@@ -327,7 +327,7 @@ opsController.get('/__logs/:type', async (req, res) => {
     });
     res.type('text/plain').send(content);
   } catch (err) {
-    eventBus?.emit('expresto.ops.logs_error', {
+    eventBus?.emit('expresto-server.ops.logs_error', {
       ...createEventPayload('ops-controller'),
       endpoint: '/__logs/:type',
       type,

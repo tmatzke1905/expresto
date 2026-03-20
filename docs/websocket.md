@@ -1,6 +1,6 @@
 # WebSocket Support
 
-expRESTo can attach Socket.IO to the same HTTP server as the Express runtime.
+expresto-server can attach Socket.IO to the same HTTP server as the Express runtime.
 
 ---
 
@@ -68,12 +68,12 @@ The verified JWT payload is stored in `socket.data.auth`.
 
 The framework emits:
 
-- `expresto.websocket.connected`
-- `expresto.websocket.disconnected`
-- `expresto.websocket.error`
-- `expresto.websocket.message`
+- `expresto-server.websocket.connected`
+- `expresto-server.websocket.disconnected`
+- `expresto-server.websocket.error`
+- `expresto-server.websocket.message`
 
-Handshake failures emit `expresto.websocket.error` with a reason such as:
+Handshake failures emit `expresto-server.websocket.error` with a reason such as:
 
 - `missing_token`
 - `invalid_token`

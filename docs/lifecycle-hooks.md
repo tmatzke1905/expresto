@@ -1,6 +1,6 @@
 # Lifecycle Hooks
 
-expRESTo uses a small hook pipeline around `createServer()` and graceful
+expresto-server uses a small hook pipeline around `createServer()` and graceful
 shutdown.
 
 ## Hook Order
@@ -48,7 +48,7 @@ Hook handlers receive a `HookContext` with:
 The supported hook API is exported from the package root:
 
 ```ts
-import { hookManager, LifecycleHook, type HookContext } from 'expresto';
+import { hookManager, LifecycleHook, type HookContext } from 'expresto-server';
 
 hookManager.on(LifecycleHook.STARTUP, async (ctx: HookContext) => {
   ctx.services.set('db', await connectDatabase());

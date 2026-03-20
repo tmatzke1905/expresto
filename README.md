@@ -1,6 +1,6 @@
-# expresto
+# expresto-server
 
-expRESTo is an Express-based framework for secured, observable APIs with
+expresto-server is an Express-based framework for secured, observable APIs with
 file-based controllers, lifecycle hooks, metrics, schedulers, and optional
 WebSocket support.
 
@@ -27,7 +27,7 @@ The following topics are intentionally not part of the supported v1 scope:
 ## Install
 
 ```bash
-npm install expresto
+npm install expresto-server
 ```
 
 ## Quick Start
@@ -35,7 +35,7 @@ npm install expresto
 Minimal application bootstrap:
 
 ```ts
-import { createServer } from 'expresto';
+import { createServer } from 'expresto-server';
 
 const runtime = await createServer('./middleware.config.prod.json');
 
@@ -45,7 +45,7 @@ runtime.app.listen(runtime.config.port, runtime.config.host ?? '0.0.0.0');
 The packaged runtime can also be started directly:
 
 ```bash
-node ./node_modules/expresto/dist/index.js ./middleware.config.prod.json
+node ./node_modules/expresto-server/dist/index.js ./middleware.config.prod.json
 ```
 
 `createServer()` assembles the runtime and returns the Express app together
@@ -55,7 +55,7 @@ with config, logger, EventBus, hook manager, and services. It does not call
 ## Stable Controller Contract
 
 ```ts
-import type { ExtRequest, ExtResponse } from 'expresto';
+import type { ExtRequest, ExtResponse } from 'expresto-server';
 
 export default {
   route: '/ping',

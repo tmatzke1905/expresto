@@ -195,7 +195,7 @@ Applications should pin framework versions accordingly.
 Example:
 
 ```
-"expresto": "^1.4.0"
+"expresto-server": "^1.4.0"
 ```
 
 ---

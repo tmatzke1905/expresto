@@ -202,7 +202,7 @@ During request processing, modules may emit events through the EventBus.
 Example:
 
 ```
-eventBus.emit("expresto.ops.request", {
+eventBus.emit("expresto-server.ops.request", {
   endpoint: "/users/42",
   method: "GET"
 })

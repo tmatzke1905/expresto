@@ -1,6 +1,6 @@
 # Releases
 
-This document tracks the planned feature scope per version for expRESTo.
+This document tracks the planned feature scope per version for expresto-server.
 
 It complements [roadmap.md](./roadmap.md):
 

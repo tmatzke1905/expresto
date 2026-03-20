@@ -178,7 +178,7 @@ Key properties:
 Example usage:
 
 ```
-eventBus.emit("expresto.websocket.connected", payload)
+eventBus.emit("expresto-server.websocket.connected", payload)
 ```
 
 Typical consumers:
@@ -250,8 +250,8 @@ EventBus event emitted
 Events:
 
 ```
-expresto.websocket.connected
-expresto.websocket.disconnected
+expresto-server.websocket.connected
+expresto-server.websocket.disconnected
 ```
 
 ---
@@ -271,7 +271,7 @@ auth.token
 Authorization decisions may emit events such as:
 
 ```
-expresto.security.authorize
+expresto-server.security.authorize
 ```
 
 Security logic remains customizable for projects using the framework.

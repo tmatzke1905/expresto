@@ -170,7 +170,7 @@ describe('WebSocketManager', () => {
     expect(err).toBeInstanceOf(Error);
     expect(err.message).toContain('Unauthorized');
     expect(emitSpy).toHaveBeenCalledWith(
-      'expresto.websocket.error',
+      'expresto-server.websocket.error',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'websocket-manager',
@@ -207,7 +207,7 @@ describe('WebSocketManager', () => {
     expect(err).toBeInstanceOf(Error);
     expect(err?.message).toContain('Forbidden');
     expect(emitSpy).toHaveBeenCalledWith(
-      'expresto.websocket.error',
+      'expresto-server.websocket.error',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'websocket-manager',
@@ -259,7 +259,7 @@ describe('WebSocketManager', () => {
   // ------------------------------------------------------------------
   // 3b. EventBus emissions
   // ------------------------------------------------------------------
-  it('emits expresto.websocket.connected with stable payload', () => {
+  it('emits expresto-server.websocket.connected with stable payload', () => {
     let connectionHandler: ((socket: any) => void) | undefined;
     const onSpy = vi.spyOn(IOServer.prototype, 'on').mockImplementation(function (
       event: any,
@@ -287,7 +287,7 @@ describe('WebSocketManager', () => {
     connectionHandler?.(fakeSocket);
 
     expect(emitSpy).toHaveBeenCalledWith(
-      'expresto.websocket.connected',
+      'expresto-server.websocket.connected',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'websocket-manager',
@@ -303,7 +303,7 @@ describe('WebSocketManager', () => {
     );
   });
 
-  it('emits expresto.websocket.disconnected with stable payload', () => {
+  it('emits expresto-server.websocket.disconnected with stable payload', () => {
     let connectionHandler: ((socket: any) => void) | undefined;
     const onSpy = vi.spyOn(IOServer.prototype, 'on').mockImplementation(function (
       event: any,
@@ -337,7 +337,7 @@ describe('WebSocketManager', () => {
     disconnectHandler?.('client namespace disconnect');
 
     expect(emitSpy).toHaveBeenCalledWith(
-      'expresto.websocket.disconnected',
+      'expresto-server.websocket.disconnected',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'websocket-manager',
@@ -353,7 +353,7 @@ describe('WebSocketManager', () => {
     );
   });
 
-  it('emits expresto.websocket.message for incoming socket events', () => {
+  it('emits expresto-server.websocket.message for incoming socket events', () => {
     let connectionHandler: ((socket: any) => void) | undefined;
     vi.spyOn(IOServer.prototype, 'on').mockImplementation(function (event: any, cb: any) {
       if (event === 'connection') connectionHandler = cb;
@@ -380,7 +380,7 @@ describe('WebSocketManager', () => {
     onAnyHandler?.('chat.message', { text: 'hello' });
 
     expect(emitSpy).toHaveBeenCalledWith(
-      'expresto.websocket.message',
+      'expresto-server.websocket.message',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'websocket-manager',
@@ -391,7 +391,7 @@ describe('WebSocketManager', () => {
     );
   });
 
-  it('emits expresto.websocket.error for socket runtime errors', () => {
+  it('emits expresto-server.websocket.error for socket runtime errors', () => {
     let connectionHandler: ((socket: any) => void) | undefined;
     vi.spyOn(IOServer.prototype, 'on').mockImplementation(function (event: any, cb: any) {
       if (event === 'connection') connectionHandler = cb;
@@ -418,7 +418,7 @@ describe('WebSocketManager', () => {
     errorHandler?.(new Error('socket-failed'));
 
     expect(emitSpy).toHaveBeenCalledWith(
-      'expresto.websocket.error',
+      'expresto-server.websocket.error',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'websocket-manager',

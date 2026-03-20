@@ -66,7 +66,7 @@ describe('Ops: OpenTelemetry middleware (with fake tracer)', () => {
       helmet: { enabled: false, options: {} },
       rateLimit: { enabled: false, options: {} },
       metrics: { endpoint: '/__metrics' },
-      telemetry: { enabled: true, serviceName: 'expresto-test' },
+      telemetry: { enabled: true, serviceName: 'expresto-server-test' },
       auth: { jwt: { enabled: false }, basic: { enabled: false } },
     };
 
@@ -88,12 +88,12 @@ describe('Ops: OpenTelemetry middleware (with fake tracer)', () => {
 
     const span = tracer.created[after - 1];
     expect(span).toBeTruthy();
-    expect(span.name).toContain('expresto.http_request GET ');
+    expect(span.name).toContain('expresto-server.http_request GET ');
 
     // Attribute grob prüfen
     expect(span.attributes['http.method']).toBe('GET');
     expect(typeof span.attributes['http.target']).toBe('string');
     expect(typeof span.attributes['http.route']).toBe('string');
-    expect(span.attributes['service.name']).toBe('expresto-test');
+    expect(span.attributes['service.name']).toBe('expresto-server-test');
   });
 });

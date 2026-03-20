@@ -79,7 +79,7 @@ describe('createServer runtime behavior', () => {
     captureProcessHandlers();
     const runtime = await createServer(createConfig());
     const seen: unknown[] = [];
-    runtime.eventBus.on('expresto.http.request_error', payload => {
+    runtime.eventBus.on('expresto-server.http.request_error', payload => {
       seen.push(payload);
     });
 

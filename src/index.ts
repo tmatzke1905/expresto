@@ -120,7 +120,7 @@ function getErrorMessage(err: unknown): string {
 }
 
 /**
- * Creates and configures the expRESTo server asynchronously.
+ * Creates and configures the expresto-server runtime asynchronously.
  * @param configInput Path to the middleware config JSON file or an AppConfig object.
  */
 export async function createServer(configInput: string | AppConfig) {
@@ -274,7 +274,7 @@ export async function createServer(configInput: string | AppConfig) {
 
     logger.app.error('request_error', { status, url: req.originalUrl, method: req.method, err });
     // Namespaced framework event for consumers (metrics/audit/etc.)
-    eventBus.emit('expresto.http.request_error', createEventPayload('http-error-handler', {
+    eventBus.emit('expresto-server.http.request_error', createEventPayload('http-error-handler', {
       status,
       url: req.originalUrl,
       method: req.method,
@@ -347,7 +347,7 @@ export async function createServer(configInput: string | AppConfig) {
           resolve();
         }
       });
-      logger.app.info('expRESTo shutdown complete.');
+      logger.app.info('expresto-server shutdown complete.');
     } catch (e) {
       logger.app.error('Error during shutdown', e);
     } finally {
@@ -386,13 +386,13 @@ if (isDirectExecution) {
     );
 
     if (config.scheduler?.enabled && config.scheduler?.mode === 'standalone') {
-      logger.app.info('expRESTo running in scheduler-only standalone mode (no HTTP server)');
+      logger.app.info('expresto-server running in scheduler-only standalone mode (no HTTP server)');
       return;
     }
 
     // Start server and capture instance for shutdown
     server = app.listen(config.port, config.host || '0.0.0.0', () => {
-      logger.app.info(`expRESTo listening at http://${config.host || '0.0.0.0'}:${config.port}`);
+      logger.app.info(`expresto-server listening at http://${config.host || '0.0.0.0'}:${config.port}`);
     });
 
     // Optional WebSocket support on the same HTTP server

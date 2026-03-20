@@ -47,7 +47,7 @@ function preparePackedConsumerProject(prefix: string): PackedConsumerProject {
   const packDir = path.join(packageWorkDir, 'pack');
   const extractDir = path.join(packageWorkDir, 'extract');
   const consumerDir = path.join(packageWorkDir, 'consumer');
-  const consumerPackageDir = path.join(consumerDir, 'node_modules', 'expresto');
+  const consumerPackageDir = path.join(consumerDir, 'node_modules', 'expresto-server');
   const controllersDir = path.join(consumerDir, 'controllers');
   const jobsDir = path.join(consumerDir, 'jobs');
   const logsDir = path.join(consumerDir, 'logs');
@@ -152,8 +152,8 @@ describe('published package smoke test', () => {
           [
             '-e',
             `console.warn = () => {};
-const pkg = require('expresto');
-const schemaPath = require.resolve('expresto/middleware.config.schema.json');
+const pkg = require('expresto-server');
+const schemaPath = require.resolve('expresto-server/middleware.config.schema.json');
 (async () => {
   pkg.hookManager.on(pkg.LifecycleHook.INITIALIZE, (ctx) => {
     ctx.services.set('fromPublicHook', { shutdown: async () => {} });
@@ -219,7 +219,7 @@ const schemaPath = require.resolve('expresto/middleware.config.schema.json');
           [
             '--input-type=module',
             '-e',
-            `const pkg = await import('expresto');
+            `const pkg = await import('expresto-server');
 console.log(JSON.stringify({
   exports: Object.keys(pkg),
   hasCreateServer: typeof pkg.createServer === 'function',
@@ -412,7 +412,7 @@ module.exports = {
             '-e',
             `console.warn = () => {};
 const fs = require('node:fs');
-const pkg = require('expresto');
+const pkg = require('expresto-server');
 
 async function requestJson(baseUrl, targetPath, init) {
   const response = await fetch(baseUrl + targetPath, init);
@@ -518,7 +518,7 @@ async function waitForSchedulerOutput(outputPath) {
         expect(result.publicRoute.status).toBe(200);
         expect(result.publicRoute.body).toEqual({ pong: true });
         expect(result.basicDenied.status).toBe(401);
-        expect(result.basicDenied.authenticate).toContain('Basic realm="expresto"');
+        expect(result.basicDenied.authenticate).toContain('Basic realm="expresto-server"');
         expect(result.basicAllowed.status).toBe(200);
         expect(result.basicAllowed.body).toEqual({
           ok: true,
@@ -533,7 +533,7 @@ async function waitForSchedulerOutput(outputPath) {
           sub: 'release-user',
         });
         expect(result.healthDenied.status).toBe(401);
-        expect(result.healthDenied.authenticate).toContain('Basic realm="expresto"');
+        expect(result.healthDenied.authenticate).toContain('Basic realm="expresto-server"');
         expect(result.healthAllowed.status).toBe(200);
         expect(result.healthAllowed.body).toMatchObject({ status: 'ok' });
         expect(result.healthAllowed.body.services).toEqual(

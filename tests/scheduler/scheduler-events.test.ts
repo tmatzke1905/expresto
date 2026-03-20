@@ -50,7 +50,7 @@ afterEach(() => {
 });
 
 describe('Scheduler events', () => {
-  it('emits expresto.scheduler.started and expresto.scheduler.stopped', async () => {
+  it('emits expresto-server.scheduler.started and expresto-server.scheduler.stopped', async () => {
     const emit = vi.fn();
     const callbacks: ScheduledCallback[] = [];
     installCronMock(callbacks);
@@ -81,14 +81,14 @@ describe('Scheduler events', () => {
     await scheduler.init(register);
     scheduler.cancelAll();
 
-    expectEvent(emit, 'expresto.scheduler.started', {
+    expectEvent(emit, 'expresto-server.scheduler.started', {
       ts: expect.any(String),
       source: 'scheduler-service',
       mode: 'attached',
       jobCount: 1,
     });
 
-    expectEvent(emit, 'expresto.scheduler.stopped', {
+    expectEvent(emit, 'expresto-server.scheduler.stopped', {
       ts: expect.any(String),
       source: 'scheduler-service',
       jobCount: 1,
@@ -125,13 +125,13 @@ describe('Scheduler events', () => {
 
     await callbacks[0]?.();
 
-    expectEvent(emit, 'expresto.scheduler.job.start', {
+    expectEvent(emit, 'expresto-server.scheduler.job.start', {
       ts: expect.any(String),
       source: 'scheduler-service',
       job: 'cleanup',
     });
 
-    expectEvent(emit, 'expresto.scheduler.job.success', {
+    expectEvent(emit, 'expresto-server.scheduler.job.success', {
       ts: expect.any(String),
       source: 'scheduler-service',
       job: 'cleanup',
@@ -169,12 +169,12 @@ describe('Scheduler events', () => {
 
     await callbacks[0]?.();
 
-    expectEvent(emit, 'expresto.scheduler.job.start', {
+    expectEvent(emit, 'expresto-server.scheduler.job.start', {
       source: 'scheduler-service',
       job: 'failing',
     });
 
-    expectEvent(emit, 'expresto.scheduler.job.error', {
+    expectEvent(emit, 'expresto-server.scheduler.job.error', {
       ts: expect.any(String),
       source: 'scheduler-service',
       job: 'failing',

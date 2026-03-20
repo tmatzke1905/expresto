@@ -50,7 +50,7 @@ describe('ServiceRegistry', () => {
     expect(registry.get('dup')).toBe(v2);
   });
 
-  it('emits expresto.services.* events when an EventBus is provided', async () => {
+  it('emits expresto-server.services.* events when an EventBus is provided', async () => {
     const emit = vi.fn();
     const reg = new ServiceRegistry({ emit } as { emit: (event: string, payload: unknown) => void });
     const closable = { close: vi.fn().mockResolvedValue(undefined) };
@@ -61,7 +61,7 @@ describe('ServiceRegistry', () => {
     await reg.shutdownAll();
 
     expect(emit).toHaveBeenCalledWith(
-      'expresto.services.registered',
+      'expresto-server.services.registered',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'service-registry',
@@ -69,14 +69,14 @@ describe('ServiceRegistry', () => {
       })
     );
     expect(emit).toHaveBeenCalledWith(
-      'expresto.services.shutdown.started',
+      'expresto-server.services.shutdown.started',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'service-registry',
       })
     );
     expect(emit).toHaveBeenCalledWith(
-      'expresto.services.shutdown.completed',
+      'expresto-server.services.shutdown.completed',
       expect.objectContaining({
         ts: expect.any(String),
         source: 'service-registry',

@@ -138,7 +138,7 @@ Typical use cases:
 Example:
 
 ```
-eventBus.emit('expresto.websocket.connected', payload)
+eventBus.emit('expresto-server.websocket.connected', payload)
 ```
 
 ---
@@ -220,9 +220,9 @@ Example configuration:
 The scheduler emits events such as:
 
 ```
-expresto.scheduler.job.start
-expresto.scheduler.job.success
-expresto.scheduler.job.error
+expresto-server.scheduler.job.start
+expresto-server.scheduler.job.success
+expresto-server.scheduler.job.error
 ```
 
 ---
@@ -254,8 +254,8 @@ Authorization header
 Events emitted:
 
 ```
-expresto.websocket.connected
-expresto.websocket.disconnected
+expresto-server.websocket.connected
+expresto-server.websocket.disconnected
 ```
 
 The WebSocketManager integrates with the EventBus to allow plugins

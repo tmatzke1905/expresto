@@ -102,7 +102,7 @@ describe('otelMiddleware', () => {
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(tracer.created).toHaveLength(1);
-    expect(tracer.created[0].name).toBe('expresto.http_request GET /health');
+    expect(tracer.created[0].name).toBe('expresto-server.http_request GET /health');
     expect(tracer.created[0].attributes).toEqual(
       expect.objectContaining({
         'http.method': 'GET',
@@ -131,7 +131,7 @@ describe('otelMiddleware', () => {
     } as any;
     const res = createResponse(200);
 
-    otelMiddleware({ telemetry: { enabled: true, serviceName: 'expresto' } } as any, createLogger())(
+    otelMiddleware({ telemetry: { enabled: true, serviceName: 'expresto-server' } } as any, createLogger())(
       req,
       res,
       next
@@ -139,7 +139,7 @@ describe('otelMiddleware', () => {
     res.emit('close');
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(tracer.created[0].attributes['service.name']).toBe('expresto');
+    expect(tracer.created[0].attributes['service.name']).toBe('expresto-server');
     expect(tracer.created[0].attributes['http.route']).toBe('/stream');
     expect(tracer.created[0].attributes['http.target']).toBe('/stream?id=42');
     expect(tracer.created[0].status).toEqual({

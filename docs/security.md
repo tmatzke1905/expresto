@@ -1,6 +1,6 @@
 # Security
 
-expRESTo supports route-level authentication via:
+expresto-server supports route-level authentication via:
 
 - JWT bearer tokens
 - HTTP Basic Authentication
@@ -93,12 +93,12 @@ This keeps existing middleware and controller conventions working.
 
 ## Security Hooks and Events
 
-After authentication succeeds, expRESTo runs the `LifecycleHook.SECURITY`
+After authentication succeeds, expresto-server runs the `LifecycleHook.SECURITY`
 pipeline so applications can apply additional authorization checks.
 
 The framework emits:
 
-- `expresto.security.authorize`
+- `expresto-server.security.authorize`
 
 Payloads include the route mode, path, method, and whether access was allowed
 or denied.

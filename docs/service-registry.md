@@ -11,7 +11,7 @@ from the package root.
 Register a service during startup:
 
 ```ts
-import { hookManager, LifecycleHook } from 'expresto';
+import { hookManager, LifecycleHook } from 'expresto-server';
 
 hookManager.on(LifecycleHook.STARTUP, async ctx => {
   const db = await connectDatabase();
@@ -22,7 +22,7 @@ hookManager.on(LifecycleHook.STARTUP, async ctx => {
 Access a service later:
 
 ```ts
-import { hookManager, LifecycleHook } from 'expresto';
+import { hookManager, LifecycleHook } from 'expresto-server';
 
 hookManager.on(LifecycleHook.POST_INIT, async ctx => {
   if (ctx.services.has('db')) {

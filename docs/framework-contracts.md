@@ -1,6 +1,6 @@
 # Expresto Framework Contracts
 
-This document defines the supported v1 runtime contracts for expRESTo.
+This document defines the supported v1 runtime contracts for expresto-server.
 
 For the exact package root exports, see [public-api.md](./public-api.md).
 
@@ -36,7 +36,7 @@ Execution guarantees:
 Framework event names follow:
 
 ```txt
-expresto.<domain>.<event>
+expresto-server.<domain>.<event>
 ```
 
 ## Hook System Contract
@@ -107,7 +107,7 @@ The object form above is the documented and supported package contract.
 The stable scheduler job contract is a `SchedulerModule` export:
 
 ```ts
-import type { SchedulerModule } from 'expresto';
+import type { SchedulerModule } from 'expresto-server';
 
 const job: SchedulerModule = {
   id: 'cleanup',

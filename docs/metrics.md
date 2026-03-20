@@ -1,6 +1,6 @@
 # Metrics and Monitoring
 
-expRESTo includes built-in Prometheus metrics and lightweight OpenTelemetry
+expresto-server includes built-in Prometheus metrics and lightweight OpenTelemetry
 request tracing.
 
 ## Prometheus

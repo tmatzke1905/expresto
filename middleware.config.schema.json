@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/expresto/middleware.config.schema.json",
-  "title": "expRESTo Middleware Config",
+  "$id": "https://example.com/expresto-server/middleware.config.schema.json",
+  "title": "expresto-server Middleware Config",
   "type": "object",
   "additionalProperties": false,
   "required": ["port", "contextRoot", "controllersPath", "log"],

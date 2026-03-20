@@ -14,13 +14,13 @@ The purpose of this catalog is to provide:
 All events follow the naming scheme:
 
 ```
-expresto.<domain>.<event>
+expresto-server.<domain>.<event>
 ```
 
 Example:
 
 ```
-expresto.websocket.connected
+expresto-server.websocket.connected
 ```
 
 ---
@@ -34,15 +34,15 @@ Event names must follow these rules:
 3. Domain based
 
 ```
-expresto.<module>.<action>
+expresto-server.<module>.<action>
 ```
 
 Examples:
 
 ```
-expresto.websocket.connected
-expresto.scheduler.job.start
-expresto.security.authorize
+expresto-server.websocket.connected
+expresto-server.scheduler.job.start
+expresto-server.security.authorize
 ```
 
 ---
@@ -75,7 +75,7 @@ Example:
 
 # WebSocket Events
 
-### expresto.websocket.connected
+### expresto-server.websocket.connected
 
 Emitted when a client successfully connects.
 
@@ -98,7 +98,7 @@ Payload:
 
 ---
 
-### expresto.websocket.disconnected
+### expresto-server.websocket.disconnected
 
 Emitted when a client disconnects.
 
@@ -121,7 +121,7 @@ Payload:
 
 ---
 
-### expresto.websocket.error
+### expresto-server.websocket.error
 
 Emitted when a WebSocket error occurs.
 
@@ -142,7 +142,7 @@ Payload:
 
 ---
 
-### expresto.websocket.message
+### expresto-server.websocket.message
 
 Emitted when a custom client message arrives on a socket.
 
@@ -168,7 +168,7 @@ Payload:
 
 # Scheduler Events
 
-### expresto.scheduler.started
+### expresto-server.scheduler.started
 
 Emitted when the scheduler starts.
 
@@ -184,7 +184,7 @@ Payload:
 
 ---
 
-### expresto.scheduler.job.start
+### expresto-server.scheduler.job.start
 
 Emitted when a scheduled job begins execution.
 
@@ -201,7 +201,7 @@ Payload:
 
 ---
 
-### expresto.scheduler.job.success
+### expresto-server.scheduler.job.success
 
 Emitted when a job finishes successfully.
 
@@ -219,7 +219,7 @@ Payload:
 
 ---
 
-### expresto.scheduler.job.error
+### expresto-server.scheduler.job.error
 
 Emitted when a job fails.
 
@@ -238,7 +238,7 @@ Payload:
 
 ---
 
-### expresto.scheduler.stopped
+### expresto-server.scheduler.stopped
 
 Emitted when the scheduler shuts down.
 
@@ -256,7 +256,7 @@ Payload:
 
 # Security Events
 
-### expresto.security.authorize
+### expresto-server.security.authorize
 
 Emitted when an authorization check occurs.
 
@@ -284,18 +284,18 @@ Payload:
 
 Operational endpoints may emit events for observability.
 
-### expresto.ops.*
+### expresto-server.ops.*
 
 Operational endpoints emit:
 
 ```
-expresto.ops.health_read
-expresto.ops.routes_read
-expresto.ops.config_read
-expresto.ops.config_error
-expresto.ops.logs_read
-expresto.ops.logs_error
-expresto.ops.logs_not_found
+expresto-server.ops.health_read
+expresto-server.ops.routes_read
+expresto-server.ops.config_read
+expresto-server.ops.config_error
+expresto-server.ops.logs_read
+expresto-server.ops.logs_error
+expresto-server.ops.logs_not_found
 ```
 
 All payloads follow:
@@ -313,14 +313,14 @@ All payloads follow:
 
 # Service Registry Events
 
-### expresto.services.registered
-### expresto.services.set
-### expresto.services.removed
-### expresto.services.shutdown.started
-### expresto.services.shutdown.success
-### expresto.services.shutdown.skipped
-### expresto.services.shutdown.error
-### expresto.services.shutdown.completed
+### expresto-server.services.registered
+### expresto-server.services.set
+### expresto-server.services.removed
+### expresto-server.services.shutdown.started
+### expresto-server.services.shutdown.success
+### expresto-server.services.shutdown.skipped
+### expresto-server.services.shutdown.error
+### expresto-server.services.shutdown.completed
 
 Payload:
 
@@ -340,9 +340,9 @@ Payload:
 The following domains may introduce additional events:
 
 ```
-expresto.metrics.*
-expresto.cluster.*
-expresto.database.*
+expresto-server.metrics.*
+expresto-server.cluster.*
+expresto-server.database.*
 ```
 
 New events must be documented in this file.

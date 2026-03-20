@@ -115,7 +115,7 @@ describe('Scheduler', () => {
       await vi.advanceTimersByTimeAsync(20);
 
       expect(emit).toHaveBeenCalledWith(
-        'expresto.scheduler.timeout.start',
+        'expresto-server.scheduler.timeout.start',
         expect.objectContaining({
           ts: expect.any(String),
           source: 'scheduler-service',
@@ -123,7 +123,7 @@ describe('Scheduler', () => {
         })
       );
       expect(emit).toHaveBeenCalledWith(
-        'expresto.scheduler.timeout.success',
+        'expresto-server.scheduler.timeout.success',
         expect.objectContaining({
           ts: expect.any(String),
           source: 'scheduler-service',

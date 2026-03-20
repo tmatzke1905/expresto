@@ -43,7 +43,7 @@ export class ServiceRegistry {
       throw new Error(`Service '${name}' is already registered.`);
     }
     this.store(name, instance);
-    this.emit('expresto.services.registered', { name });
+    this.emit('expresto-server.services.registered', { name });
   }
 
   /**
@@ -53,7 +53,7 @@ export class ServiceRegistry {
   set<T>(name: string, instance: T): void {
     const replaced = this.services.has(name);
     this.store(name, instance);
-    this.emit('expresto.services.set', { name, replaced });
+    this.emit('expresto-server.services.set', { name, replaced });
   }
 
   /**
@@ -79,7 +79,7 @@ export class ServiceRegistry {
    */
   remove(name: string): void {
     const removed = this.services.delete(name);
-    this.emit('expresto.services.removed', { name, removed });
+    this.emit('expresto-server.services.removed', { name, removed });
   }
 
   /**
@@ -87,7 +87,7 @@ export class ServiceRegistry {
    */
   delete(name: string): boolean {
     const removed = this.services.delete(name);
-    this.emit('expresto.services.removed', { name, removed });
+    this.emit('expresto-server.services.removed', { name, removed });
     return removed;
   }
 
@@ -112,7 +112,7 @@ export class ServiceRegistry {
    * but this is not enforced. If neither method is found, a warning is logged.
    */
   async shutdownAll(): Promise<void> {
-    this.emit('expresto.services.shutdown.started', { serviceCount: this.services.size });
+    this.emit('expresto-server.services.shutdown.started', { serviceCount: this.services.size });
 
     for (const [name, service] of this.services.entries()) {
       try {
@@ -123,26 +123,26 @@ export class ServiceRegistry {
           method = 'shutdown';
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (service as any).shutdown();
-          this.emit('expresto.services.shutdown.success', { name, method });
+          this.emit('expresto-server.services.shutdown.success', { name, method });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } else if (service && typeof (service as any).close === 'function') {
           method = 'close';
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (service as any).close();
-          this.emit('expresto.services.shutdown.success', { name, method });
+          this.emit('expresto-server.services.shutdown.success', { name, method });
         } else {
           console.warn(`Service '${name}' does not have shutdown or close method.`);
-          this.emit('expresto.services.shutdown.skipped', { name, method });
+          this.emit('expresto-server.services.shutdown.skipped', { name, method });
         }
       } catch (err) {
         console.error(`Error shutting down service '${name}':`, err);
-        this.emit('expresto.services.shutdown.error', {
+        this.emit('expresto-server.services.shutdown.error', {
           name,
           error: err instanceof Error ? err.message : String(err),
         });
       }
     }
     this.services.clear();
-    this.emit('expresto.services.shutdown.completed', { serviceCount: this.services.size });
+    this.emit('expresto-server.services.shutdown.completed', { serviceCount: this.services.size });
   }
 }

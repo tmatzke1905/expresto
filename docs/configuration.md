@@ -1,6 +1,6 @@
 # Configuration
 
-expRESTo uses one JSON runtime config. The current minimum supported runtime is
+expresto-server uses one JSON runtime config. The current minimum supported runtime is
 Node.js 22.
 
 ## Example
@@ -101,8 +101,8 @@ Node.js 22.
 - `scheduler.mode: "standalone"` suppresses `listen()` only in the direct CLI
   startup path. It is rejected if `cluster.enabled` is also `true`.
 - With `cluster.enabled: true`, attached scheduler startup is skipped and emits
-  `expresto.scheduler.disabled`.
-- expRESTo v1 does not implement a full Node.js cluster runtime yet, even
+  `expresto-server.scheduler.disabled`.
+- expresto-server v1 does not implement a full Node.js cluster runtime yet, even
   though the config shape reserves `cluster.enabled`.
 
 ## Security-Sensitive Rules

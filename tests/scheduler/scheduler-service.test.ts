@@ -111,7 +111,7 @@ describe('SchedulerService edge cases', () => {
     await callbacks[0]?.();
 
     expect(ctx.logger.app.warn).toHaveBeenCalledWith('[Scheduler] skip "busy" — still running');
-    expectEvent(emit, 'expresto.scheduler.job.skipped', {
+    expectEvent(emit, 'expresto-server.scheduler.job.skipped', {
       source: 'scheduler-service',
       job: 'busy',
       reason: 'running',
@@ -150,7 +150,7 @@ describe('SchedulerService edge cases', () => {
 
     expect(leaderCheck).toHaveBeenCalledTimes(1);
     expect(ctx.logger.app.debug).toHaveBeenCalledWith('[Scheduler] skip "leader" — not leader');
-    expectEvent(emit, 'expresto.scheduler.job.skipped', {
+    expectEvent(emit, 'expresto-server.scheduler.job.skipped', {
       source: 'scheduler-service',
       job: 'leader',
       reason: 'not_leader',
@@ -200,7 +200,7 @@ describe('SchedulerService edge cases', () => {
 
     await vi.advanceTimersByTimeAsync(20);
 
-    expectEvent(emit, 'expresto.scheduler.timeout.error', {
+    expectEvent(emit, 'expresto-server.scheduler.timeout.error', {
       source: 'scheduler-service',
       name: 'explode',
       error: expect.objectContaining({

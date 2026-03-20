@@ -73,20 +73,20 @@ emitAsync(event, payload)
 Naming rules for events:
 
 ```
-expresto.*
-expresto.websocket.*
-expresto.scheduler.*
-expresto.ops.*
-expresto.security.*
+expresto-server.*
+expresto-server.websocket.*
+expresto-server.scheduler.*
+expresto-server.ops.*
+expresto-server.security.*
 ```
 
 Example:
 
 ```
-expresto.websocket.connected
-expresto.websocket.disconnected
-expresto.scheduler.job.start
-expresto.scheduler.job.success
+expresto-server.websocket.connected
+expresto-server.websocket.disconnected
+expresto-server.scheduler.job.start
+expresto-server.scheduler.job.success
 ```
 
 Payload structure should be predictable:
@@ -127,11 +127,11 @@ Job context:
 Scheduler must emit events:
 
 ```
-expresto.scheduler.started
-expresto.scheduler.job.start
-expresto.scheduler.job.success
-expresto.scheduler.job.error
-expresto.scheduler.stopped
+expresto-server.scheduler.started
+expresto-server.scheduler.job.start
+expresto-server.scheduler.job.success
+expresto-server.scheduler.job.error
+expresto-server.scheduler.stopped
 ```
 
 Agents must not introduce blocking code inside scheduler tasks.
@@ -161,9 +161,9 @@ socket.context.requestId
 Required events:
 
 ```
-expresto.websocket.connected
-expresto.websocket.disconnected
-expresto.websocket.error
+expresto-server.websocket.connected
+expresto-server.websocket.disconnected
+expresto-server.websocket.error
 ```
 
 ---
@@ -212,7 +212,7 @@ afterAuthorize
 Authorization events may be emitted:
 
 ```
-expresto.security.authorize
+expresto-server.security.authorize
 ```
 
 Agents must not embed project‑specific auth logic into the framework.
