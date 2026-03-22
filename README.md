@@ -117,7 +117,7 @@ services, JWT helpers, WebSocket access, and error handling.
 
 - [Public API](./docs/public-api.md)
 - [Releases](./docs/releases.md)
-- [Release Notes](./docs/release-notes/1.0.0-beta.md)
+- [Release Notes](./docs/release-notes/1.0.0-beta.1.md)
 - [Configuration](./docs/configuration.md)
 - [Controllers](./docs/controllers.md)
 - [Security](./docs/security.md)

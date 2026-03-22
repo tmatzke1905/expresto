@@ -12,6 +12,7 @@ It complements [roadmap.md](./roadmap.md):
 
 - The first public npm prerelease is tracked as `1.0.0-beta`
   (npm-compatible form of `1.0.0.beta`).
+- Follow-up prereleases use npm-compatible suffixes such as `1.0.0-beta.1`.
 - Prereleases may be published before the example project is complete.
 - No version may be declared stable until the example project covers the full
   supported feature set of that version.
@@ -22,10 +23,10 @@ It complements [roadmap.md](./roadmap.md):
 
 ## 1.0.0-beta
 
-Status: planned first public prerelease
+Status: published historical first public prerelease
 
-Goal: publish the supported v1 core on npm for early adopters and integration
-testing.
+Goal: publish the original supported v1 core on npm for early adopters and
+integration testing.
 
 Release notes:
 
@@ -60,8 +61,45 @@ Explicitly not included:
 Release gate:
 
 - beta-foundation work is complete
+- package validation, tests, and coverage were green at publish time
+- release notes were drafted
+- supported docs were aligned with the implementation
+
+## 1.0.0-beta.1
+
+Status: current public prerelease
+
+Goal: publish the supported v1 core plus the new WebSocket runtime extension
+API on npm for broader integration testing before the stable `1.0.0` release.
+
+Release notes:
+
+- [1.0.0-beta.1](./release-notes/1.0.0-beta.1.md)
+
+Roadmap scope:
+
+- completed beta-foundation work
+- completed Package 4 from [roadmap.md](./roadmap.md)
+
+Included feature set:
+
+- everything from `1.0.0-beta`
+- supported WebSocket extension API via `ExprestoRuntime.getSocketServer()`
+- documented runtime timing rules for pre-listen, post-listen, and disabled
+  WebSocket modes
+- strengthened coverage baseline requiring at least 85% statements, functions,
+  and lines
+
+Explicitly not included:
+
+- stable example project requirement for release promotion
+- plugin loading and plugin configuration
+- real multi-process cluster runtime
+
+Release gate:
+
 - `npm run build`, `npm test`, and `npm run coverage` are green
-- coverage thresholds require at least 85% statements, functions, and lines
+- the WebSocket runtime API is covered by automated tests
 - release notes are drafted
 - supported docs are aligned with the implementation
 
@@ -73,18 +111,18 @@ Goal: mark the v1 core as stable for production use.
 
 Roadmap scope:
 
-- Packages 4 and 1 from [roadmap.md](./roadmap.md)
+- Package 1 from [roadmap.md](./roadmap.md)
+- published prerelease foundation from `1.0.0-beta.1`
 
 Included feature set:
 
-- everything from `1.0.0-beta`
-- supported WebSocket extension API
+- everything from `1.0.0-beta.1`
 - example project completed for the supported v1 surface
 - example project referenced from README and integration docs
 
 Stable release gate:
 
-- Packages 4 and 1 from [roadmap.md](./roadmap.md) are complete
+- Package 1 from [roadmap.md](./roadmap.md) is complete
 - the example project uses the published package only
 - the example project covers:
   - controller contract
@@ -195,8 +233,9 @@ Stable release gate:
 
 ## Version Mapping Summary
 
-- `1.0.0-beta`: completed beta-foundation work
-- `1.0.0`: beta foundation plus Packages 4 and 1
+- `1.0.0-beta`: initial beta-foundation release
+- `1.0.0-beta.1`: beta foundation plus completed Package 4
+- `1.0.0`: `1.0.0-beta.1` plus Package 1
 - `1.1.0`: Package 3 plus example refresh
 - `1.2.0`: Package 5 plus example refresh
 - `1.3.0`: Package 6 plus example refresh

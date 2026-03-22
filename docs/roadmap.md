@@ -24,9 +24,10 @@ Execution rule for release work:
 
 ## Stabilization Package (Post-beta, Pre-1.0.0)
 
-The first public npm prerelease is `1.0.0-beta`. The release plan has been
-updated so that Package 4 is implemented next and becomes part of the stable
-`1.0.0` path. Package 1 follows immediately after it and closes the
+The first public npm prerelease is `1.0.0-beta`. The current follow-up
+prerelease for continued v1 validation is `1.0.0-beta.1`. The release plan has
+been updated so that Package 4 is implemented next and becomes part of the
+stable `1.0.0` path. Package 1 follows immediately after it and closes the
 stable-release gate with a public example app.
 
 ### Package 4 — WebSocket Extension API
@@ -63,7 +64,7 @@ including the supported WebSocket surface, and close the stable-release gate.
 
 Checklist:
 
-- [ ] Create a small example app that consumes the published `expresto-server@1.0.0-beta`
+- [ ] Create a small example app that consumes the published `expresto-server@1.0.0-beta.1`
       package only, not repo-internal imports.
 - [ ] Demonstrate the supported controller contract, auth, ops, scheduler, and
       supported WebSocket setup.
