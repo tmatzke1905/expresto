@@ -207,22 +207,24 @@ Stable release gate:
 
 Status: deferred
 
-Target version: to be decided after design freeze
+Target version: to be assigned in the next public release that includes the
+completed clustering package
 
 Roadmap scope:
 
 - Package 2 from [roadmap.md](./roadmap.md)
 
-Reason version is still open:
+Version note:
 
-- real clustering may remain additive and fit into a minor release
-- or it may change runtime semantics enough to require a new major version
+- the implementation is now complete on the Package 2 branch
+- the published npm version carrying the clustered runtime has not been cut yet
 
-Planned feature set:
+Implemented feature set:
 
 - real primary/worker bootstrap
 - worker lifecycle management
-- cluster-aware metrics, ops, scheduler, and WebSocket strategy
+- cluster-aware metrics, ops, and scheduler behavior
+- explicit startup rejection for clustered WebSockets
 - graceful clustered shutdown
 
 Stable release gate:
@@ -239,6 +241,6 @@ Stable release gate:
 - `1.1.0`: Package 3 plus example refresh
 - `1.2.0`: Package 5 plus example refresh
 - `1.3.0`: Package 6 plus example refresh
-- `TBD`: Package 2, version assigned after cluster design review
+- `TBD`: next public release carrying completed Package 2
 
-_Last updated: 2026-03-22_
+_Last updated: 2026-03-23_
