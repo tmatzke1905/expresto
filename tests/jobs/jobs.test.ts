@@ -36,6 +36,14 @@ describe('built-in jobs', () => {
     );
   });
 
+  it('falls back to the default cleanup age when the option is not numeric', async () => {
+    await cleanupJob.run(ctx, { maxAgeMinutes: { invalid: true } });
+
+    expect(info).toHaveBeenCalledWith(
+      '[CleanupJob] Running cleanup for files older than 60 minutes...'
+    );
+  });
+
   it('logs a heartbeat timestamp', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-13T10:00:00.000Z'));
