@@ -5,7 +5,7 @@ import rateLimitMiddleware from 'express-rate-limit';
 import helmet from 'helmet';
 import log4js from 'log4js';
 import type { Server as SocketIOServer } from 'socket.io';
-import { AppConfig, getConfig, initConfig } from './lib/config';
+import { AppConfig, loadConfig } from './lib/config';
 import { resolveClusterRuntimeInfo } from './lib/cluster/context';
 import { validateClusterRuntimeConfig } from './lib/cluster/runtime';
 import { ControllerLoader } from './lib/controller-loader';
@@ -89,6 +89,14 @@ export interface ExprestoRuntime {
 
 type BasicAuthUsers = NonNullable<NonNullable<NonNullable<AppConfig['auth']>['basic']>['users']>;
 type Log4jsWithShutdown = typeof log4js & { shutdown?: (callback: () => void) => void };
+type RuntimeProcessHandlers = {
+  unhandledRejection: (reason: unknown) => void;
+  uncaughtException: (error: Error) => void;
+  SIGINT: () => void;
+  SIGTERM: () => void;
+};
+
+let activeRuntimeProcessHandlers: RuntimeProcessHandlers | undefined;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -121,6 +129,21 @@ function getErrorMessage(err: unknown): string {
   return 'Internal Server Error';
 }
 
+function installRuntimeProcessHandlers(handlers: RuntimeProcessHandlers): void {
+  if (activeRuntimeProcessHandlers) {
+    process.off('unhandledRejection', activeRuntimeProcessHandlers.unhandledRejection);
+    process.off('uncaughtException', activeRuntimeProcessHandlers.uncaughtException);
+    process.off('SIGINT', activeRuntimeProcessHandlers.SIGINT);
+    process.off('SIGTERM', activeRuntimeProcessHandlers.SIGTERM);
+  }
+
+  process.on('unhandledRejection', handlers.unhandledRejection);
+  process.on('uncaughtException', handlers.uncaughtException);
+  process.on('SIGINT', handlers.SIGINT);
+  process.on('SIGTERM', handlers.SIGTERM);
+  activeRuntimeProcessHandlers = handlers;
+}
+
 /**
  * Creates and configures the expresto-server runtime asynchronously.
  * @param configInput Path to the middleware config JSON file or an AppConfig object.
@@ -129,8 +152,7 @@ export async function createServer(configInput: string | AppConfig): Promise<Exp
   // Load configuration
   let config: AppConfig;
   if (typeof configInput === 'string') {
-    await initConfig(configInput);
-    config = getConfig();
+    config = await loadConfig(configInput);
   } else {
     config = configInput;
   }
@@ -393,10 +415,12 @@ export async function createServer(configInput: string | AppConfig): Promise<Exp
     shutdown(type).finally(() => clearTimeout(timer));
   };
 
-  process.on('unhandledRejection', onFatal('unhandledRejection'));
-  process.on('uncaughtException', onFatal('uncaughtException'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  installRuntimeProcessHandlers({
+    unhandledRejection: onFatal('unhandledRejection'),
+    uncaughtException: onFatal('uncaughtException'),
+    SIGINT: () => shutdown('SIGINT'),
+    SIGTERM: () => shutdown('SIGTERM'),
+  });
 
   return {
     app,

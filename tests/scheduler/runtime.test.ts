@@ -6,6 +6,12 @@ import { ServiceRegistry } from '../../src/lib/services/service-registry';
 import type { SchedulerJobConfig, SchedulerModule } from '../../src/lib/scheduler/types';
 
 const originalEnv = { ...process.env };
+const clusterModule = await import('node:cluster');
+const originalClusterIsWorker = clusterModule.default.isWorker;
+const originalClusterWorkerDescriptor = Object.getOwnPropertyDescriptor(
+  clusterModule.default,
+  'worker'
+);
 
 function restoreEnv(): void {
   for (const key of Object.keys(process.env)) {
@@ -17,6 +23,17 @@ function restoreEnv(): void {
   for (const [key, value] of Object.entries(originalEnv)) {
     process.env[key] = value;
   }
+}
+
+function restoreClusterState(): void {
+  clusterModule.default.isWorker = originalClusterIsWorker;
+
+  if (originalClusterWorkerDescriptor) {
+    Object.defineProperty(clusterModule.default, 'worker', originalClusterWorkerDescriptor);
+    return;
+  }
+
+  delete (clusterModule.default as { worker?: unknown }).worker;
 }
 
 function createCtx(overrides: Record<string, any> = {}) {
@@ -59,6 +76,7 @@ function expectEvent(
 
 afterEach(() => {
   restoreEnv();
+  restoreClusterState();
   vi.restoreAllMocks();
   vi.resetModules();
   vi.doUnmock('node:cluster');
@@ -190,6 +208,13 @@ describe('scheduler runtime bootstrap', () => {
     process.env[CLUSTER_ENV.schedulerLeader] = 'false';
     process.env[CLUSTER_ENV.workerCount] = '2';
     process.env[CLUSTER_ENV.workerOrdinal] = '2';
+    clusterModule.default.isWorker = true;
+    Object.defineProperty(clusterModule.default, 'worker', {
+      value: { id: 9 },
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
 
     const { ctx, emit } = createCtx({
       config: {
@@ -202,18 +227,7 @@ describe('scheduler runtime bootstrap', () => {
       },
     });
 
-    vi.resetModules();
-    vi.doMock('node:cluster', () => ({
-      default: {
-        isWorker: true,
-        worker: { id: 9 },
-      },
-    }));
-
-    const { startScheduler: startSchedulerWithWorker } =
-      await import('../../src/lib/scheduler/runtime');
-
-    await startSchedulerWithWorker(ctx);
+    await startScheduler(ctx);
 
     expect(ctx.logger.app.info).toHaveBeenCalledWith(
       '[Scheduler] disabled on non-leader cluster worker'

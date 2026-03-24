@@ -442,4 +442,25 @@ describe('createServer runtime behavior', () => {
     expect(clearTimeoutSpy).toHaveBeenCalled();
     expect(exitSpy).toHaveBeenCalledWith(0);
   });
+
+  it('replaces previously installed process handlers when a new runtime boots', async () => {
+    const onSpy = vi.spyOn(process, 'on').mockReturnValue(process);
+    const offSpy = vi.spyOn(process, 'off').mockReturnValue(process);
+
+    await createServer(createConfig());
+    onSpy.mockClear();
+    offSpy.mockClear();
+
+    await createServer(createConfig({ port: 3001 }));
+
+    expect(offSpy).toHaveBeenCalledWith('unhandledRejection', expect.any(Function));
+    expect(offSpy).toHaveBeenCalledWith('uncaughtException', expect.any(Function));
+    expect(offSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
+    expect(offSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
+
+    expect(onSpy).toHaveBeenCalledWith('unhandledRejection', expect.any(Function));
+    expect(onSpy).toHaveBeenCalledWith('uncaughtException', expect.any(Function));
+    expect(onSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
+    expect(onSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
+  });
 });
